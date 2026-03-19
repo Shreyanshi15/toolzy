@@ -15,7 +15,7 @@
   --fh:'Syne',sans-serif;--fb:'DM Sans',sans-serif;
 }
 *{margin:0;padding:0;box-sizing:border-box;}
-body{background:var(--bg);color:var(--text);font-family:var(--fb);min-height:100vh;overflow-x:hidden;
+body{background:var(--bg);color:var(--text);font-family:var(--fb);min-height:100vh;
   display:flex;flex-direction:column;align-items:center;justify-content:center;}
 body::before{content:'';position:fixed;inset:0;
   background-image:linear-gradient(rgba(0,229,255,.025) 1px,transparent 1px),
@@ -59,9 +59,9 @@ body::before{content:'';position:fixed;inset:0;
 .privacy{font-size:.72rem;color:var(--muted);line-height:1.7;}
 .privacy a{color:var(--a5);text-decoration:none;}
 .privacy a:hover{color:var(--a1);}
-.msg{font-size:.8rem;margin-top:16px;min-height:20px;padding:8px 14px;border-radius:100px;}
-.msg.success{background:#43e97b15;color:#43e97b;border:1px solid #43e97b30;}
-.msg.error{background:#ff3cac15;color:#ff3cac;border:1px solid #ff3cac30;}
+.msg{font-size:.8rem;margin-top:16px;padding:8px 14px;border-radius:100px;display:none;}
+.msg.success{display:block;background:#43e97b15;color:#43e97b;border:1px solid #43e97b30;}
+.msg.error{display:block;background:#ff3cac15;color:#ff3cac;border:1px solid #ff3cac30;}
 .spinner{display:none;width:18px;height:18px;border:2px solid #1a1a2e40;
   border-top-color:#1a1a2e;border-radius:50%;animation:spin .6s linear infinite;}
 @keyframes spin{to{transform:rotate(360deg);}}
@@ -81,7 +81,9 @@ body::before{content:'';position:fixed;inset:0;
 </style>
 </head>
 <body>
-<div class="blob b1"></div><div class="blob b2"></div><div class="blob b3"></div>
+<div class="blob b1"></div>
+<div class="blob b2"></div>
+<div class="blob b3"></div>
 
 <div class="card">
   <a class="back" href="index.html">← Back to Toolzy</a>
@@ -89,7 +91,6 @@ body::before{content:'';position:fixed;inset:0;
   <div class="tagline">Your free daily tools hub</div>
   <div class="icon-wrap" id="loginIcon">🔐</div>
 
-  <!-- LOGIN VIEW -->
   <div id="loginView">
     <div class="heading">Welcome!</div>
     <div class="desc">Sign in to save your favorite tools,<br/>scores &amp; preferences — all free.</div>
@@ -118,7 +119,6 @@ body::before{content:'';position:fixed;inset:0;
     </div>
   </div>
 
-  <!-- PROFILE VIEW shown after login -->
   <div class="profile" id="profileView">
     <img class="profile-img" id="profileImg" src="" alt="Profile"/>
     <div class="profile-name" id="profileName"></div>
@@ -131,81 +131,75 @@ body::before{content:'';position:fixed;inset:0;
 </div>
 
 <script>
-const firebaseConfig = {
+firebase.initializeApp({
   apiKey: "AIzaSyCHlV6q7fI9_vLmUpQwNofIPs5vXWncEZ8",
   authDomain: "toolzy-36a4a.firebaseapp.com",
   projectId: "toolzy-36a4a",
   storageBucket: "toolzy-36a4a.firebasestorage.app",
   messagingSenderId: "135493269350",
-  appId: "1:135493269350:web:811ac98edf35779931baa7",
-  measurementId: "G-QW1163BJY1"
-};
-
-firebase.initializeApp(firebaseConfig);
-const auth = firebase.auth();
-const provider = new firebase.auth.GoogleAuthProvider();
-
-auth.onAuthStateChanged(user => {
-  if (user) {
-    showProfile(user);
-  } else {
-    showLogin();
-  }
+  appId: "1:135493269350:web:811ac98edf35779931baa7"
 });
 
-async function signInWithGoogle() {
-  const btn     = document.getElementById('googleBtn');
-  const spinner = document.getElementById('spinner');
-  const btnText = document.getElementById('btnText');
-  btn.disabled          = true;
+var auth = firebase.auth();
+var provider = new firebase.auth.GoogleAuthProvider();
+
+auth.onAuthStateChanged(function(user) {
+  if (user) { showProfile(user); } else { showLogin(); }
+});
+
+function signInWithGoogle() {
+  var btn = document.getElementById('googleBtn');
+  var spinner = document.getElementById('spinner');
+  var btnText = document.getElementById('btnText');
+  btn.disabled = true;
   spinner.style.display = 'block';
-  btnText.textContent   = 'Signing in...';
-  try {
-    const result = await auth.signInWithPopup(provider);
-    showMsg('✅ Welcome ' + result.user.displayName + '!', 'success');
-    setTimeout(() => window.location.href = 'index.html', 1500);
-  } catch(err) {
-    btn.disabled          = false;
+  btnText.textContent = 'Signing in...';
+  auth.signInWithPopup(provider).then(function(result) {
+    showMsg('Welcome ' + result.user.displayName + '!', 'success');
+    setTimeout(function(){ window.location.href = 'index.html'; }, 1500);
+  }).catch(function(err) {
+    btn.disabled = false;
     spinner.style.display = 'none';
-    btnText.textContent   = 'Continue with Google';
+    btnText.textContent = 'Continue with Google';
     if (err.code === 'auth/popup-closed-by-user') {
       showMsg('Popup closed. Please try again.', 'error');
     } else if (err.code === 'auth/popup-blocked') {
-      showMsg('Popup blocked! Please allow popups for this site.', 'error');
+      showMsg('Popup blocked! Allow popups for this site.', 'error');
     } else {
-      showMsg('Error: ' + err.message, 'error');
+      showMsg(err.message, 'error');
     }
-  }
+  });
 }
 
-async function doSignOut() {
-  await auth.signOut();
-  showMsg('Signed out successfully.', 'success');
+function doSignOut() {
+  auth.signOut().then(function() {
+    showMsg('Signed out successfully.', 'success');
+  });
 }
 
 function showProfile(user) {
-  document.getElementById('loginView').style.display   = 'none';
+  document.getElementById('loginView').style.display = 'none';
   document.getElementById('profileView').style.display = 'block';
-  document.getElementById('loginIcon').style.display   = 'none';
-  document.getElementById('profileImg').src            = user.photoURL || '';
-  document.getElementById('profileName').textContent   = user.displayName || 'User';
-  document.getElementById('profileEmail').textContent  = user.email || '';
+  document.getElementById('loginIcon').style.display = 'none';
+  document.getElementById('profileImg').src = user.photoURL || '';
+  document.getElementById('profileName').textContent = user.displayName || 'User';
+  document.getElementById('profileEmail').textContent = user.email || '';
 }
 
 function showLogin() {
-  document.getElementById('loginView').style.display   = 'block';
+  document.getElementById('loginView').style.display = 'block';
   document.getElementById('profileView').style.display = 'none';
-  document.getElementById('loginIcon').style.display   = 'flex';
-  document.getElementById('googleBtn').disabled        = false;
-  document.getElementById('spinner').style.display     = 'none';
-  document.getElementById('btnText').textContent       = 'Continue with Google';
+  document.getElementById('loginIcon').style.display = 'flex';
+  document.getElementById('googleBtn').disabled = false;
+  document.getElementById('spinner').style.display = 'none';
+  document.getElementById('btnText').textContent = 'Continue with Google';
 }
 
 function showMsg(text, type) {
-  const el       = document.getElementById('msg');
+  var el = document.getElementById('msg');
   el.textContent = text;
-  el.className   = 'msg ' + type;
-  setTimeout(() => { el.className = 'msg'; }, 4000);
+  el.className = 'msg ' + type;
+  setTimeout(function(){ el.className = 'msg'; el.style.display = 'none'; }, 4000);
 }
 </script>
 </body>
