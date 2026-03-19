@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Text / Code Converter — Toolzy</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --bg:#07080f;--card:#111422;--card-h:#161929;
+  --border:#1c1f35;
+  --a1:#00e5ff;--a2:#ff3cac;--a3:#f5a623;--a4:#43e97b;--a5:#a78bfa;--a6:#ff6b35;
+  --text:#dde2ff;--muted:#4a5070;--muted2:#6a7090;
+  --fh:'Syne',sans-serif;--fb:'DM Sans',sans-serif;--r:16px;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--text);font-family:var(--fb);overflow-x:hidden;min-height:100vh;}
+body::before{content:'';position:fixed;inset:0;
+  background-image:linear-gradient(rgba(0,229,255,.025) 1px,transparent 1px),
+  linear-gradient(90deg,rgba(0,229,255,.025) 1px,transparent 1px);
+  background-size:56px 56px;pointer-events:none;z-index:0;}
+.blob{position:fixed;border-radius:50%;filter:blur(130px);pointer-events:none;z-index:0;}
+.b1{width:700px;height:700px;background:#ff3cac;opacity:.06;top:-250px;left:-250px;animation:bd 16s ease-in-out infinite alternate;}
+.b2{width:600px;height:600px;background:#a78bfa;opacity:.06;bottom:-200px;right:-200px;animation:bd 20s ease-in-out infinite alternate-reverse;}
+.b3{width:400px;height:400px;background:#00e5ff;opacity:.04;top:40%;left:40%;animation:bd 12s ease-in-out infinite alternate;}
+@keyframes bd{from{transform:translate(0,0) scale(1);}to{transform:translate(50px,40px) scale(1.15);}}
+
+nav{position:sticky;top:0;z-index:200;display:flex;align-items:center;justify-content:space-between;
+  padding:0 40px;height:62px;background:rgba(7,8,15,.9);backdrop-filter:blur(20px);
+  border-bottom:1px solid var(--border);}
+.nav-logo{font-family:var(--fh);font-size:1.4rem;font-weight:800;letter-spacing:-1px;
+  background:linear-gradient(120deg,#00e5ff,#a78bfa 50%,#ff3cac);
+  -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;
+  text-decoration:none;}
+.nav-back{display:flex;align-items:center;gap:8px;color:var(--muted2);text-decoration:none;
+  font-size:.83rem;font-weight:500;transition:color .2s;border:1px solid var(--border);
+  padding:6px 14px;border-radius:100px;}
+.nav-back:hover{color:var(--text);border-color:var(--a2);}
+.nav-back svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;}
+
+.hero{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;
+  padding:52px 40px 32px;text-align:center;}
+.badge{display:inline-flex;align-items:center;gap:8px;background:#ffffff06;border:1px solid var(--border);
+  color:var(--muted2);font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;
+  padding:5px 14px;border-radius:100px;margin-bottom:20px;}
+.hero-title{font-family:var(--fh);font-size:clamp(2.2rem,5vw,3.8rem);font-weight:800;
+  letter-spacing:-2px;line-height:1.05;margin-bottom:10px;}
+.hero-title span{background:linear-gradient(135deg,#ff3cac,#a78bfa 60%,#00e5ff);
+  -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;}
+.hero-sub{font-size:.95rem;color:var(--muted2);font-weight:300;line-height:1.6;}
+
+/* TAB BAR */
+.tab-bar{position:relative;z-index:1;display:flex;flex-wrap:wrap;gap:8px;
+  justify-content:center;padding:0 32px 32px;}
+.tab-btn{padding:8px 18px;border-radius:100px;border:1px solid var(--border);background:transparent;
+  color:var(--muted2);font-family:var(--fb);font-size:.82rem;font-weight:500;cursor:pointer;transition:all .2s;}
+.tab-btn:hover{border-color:var(--a2);color:var(--a2);}
+.tab-btn.active{border-color:var(--a2);color:var(--a2);background:#ff3cac15;}
+
+main{position:relative;z-index:1;max-width:900px;margin:0 auto;padding:0 24px 80px;}
+
+.conv-panel{display:none;animation:fadeUp .4s ease both;}
+.conv-panel.active{display:block;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:translateY(0);}}
+
+.panel{background:var(--card);border:1px solid var(--border);border-radius:20px;padding:28px 26px;}
+.panel-title{font-family:var(--fh);font-size:.75rem;font-weight:700;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--muted2);margin-bottom:22px;display:flex;align-items:center;gap:8px;}
+
+/* IO BOXES */
+.io-grid{display:grid;grid-template-columns:1fr auto 1fr;gap:12px;align-items:start;}
+.io-box{display:flex;flex-direction:column;gap:7px;}
+.io-label{font-size:.7rem;color:var(--muted2);text-transform:uppercase;letter-spacing:.07em;}
+textarea.io-ta{width:100%;min-height:140px;padding:14px;background:#0d0e1a;
+  border:1px solid var(--border);border-radius:12px;color:var(--text);
+  font-family:'Courier New',monospace;font-size:.88rem;line-height:1.6;
+  outline:none;resize:vertical;transition:border-color .22s,box-shadow .22s;}
+textarea.io-ta:focus{border-color:#ff3cac40;box-shadow:0 0 0 3px #ff3cac0a;}
+textarea.io-ta.output{color:var(--a2);border-color:#ff3cac20;background:#0a0b16;cursor:default;}
+textarea.io-ta.error{color:var(--a6);border-color:#ff6b3540;}
+
+/* SWAP / ARROW */
+.dir-btn{width:40px;height:40px;border-radius:50%;background:#0d0e1a;border:1px solid var(--border);
+  color:var(--muted2);cursor:pointer;font-size:1rem;display:flex;align-items:center;
+  justify-content:center;transition:all .2s;flex-shrink:0;margin-top:28px;}
+.dir-btn:hover{border-color:var(--a2);color:var(--a2);background:#ff3cac0d;transform:rotate(180deg);}
+
+/* COPY ROW */
+.copy-row{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;align-items:center;}
+.copy-btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:100px;
+  border:1px solid var(--border);background:transparent;color:var(--muted2);
+  font-family:var(--fb);font-size:.75rem;cursor:pointer;transition:all .2s;}
+.copy-btn:hover{border-color:var(--a2);color:var(--a2);}
+.copy-btn.copied{border-color:var(--a4);color:var(--a4);}
+.clear-btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:100px;
+  border:1px solid var(--border);background:transparent;color:var(--muted2);
+  font-family:var(--fb);font-size:.75rem;cursor:pointer;transition:all .2s;margin-left:auto;}
+.clear-btn:hover{border-color:var(--a6);color:var(--a6);}
+
+/* MORSE reference */
+.morse-ref{margin-top:18px;background:#0d0e1a;border:1px solid var(--border);border-radius:12px;overflow:hidden;}
+.morse-ref-toggle{padding:12px 16px;font-size:.72rem;color:var(--muted2);cursor:pointer;
+  display:flex;align-items:center;gap:8px;user-select:none;}
+.morse-ref-toggle:hover{color:var(--text);}
+.morse-ref-body{display:none;padding:0 16px 14px;
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(80px,1fr));gap:6px;}
+.morse-ref-body.open{display:grid;}
+.mc{font-family:'Courier New',monospace;font-size:.72rem;
+  background:#ffffff05;border:1px solid var(--border);border-radius:6px;
+  padding:4px 8px;display:flex;justify-content:space-between;gap:4px;}
+.mc-char{color:var(--text);font-weight:700;}
+.mc-code{color:var(--a2);}
+
+/* ASCII table toggle */
+.ref-toggle{display:flex;align-items:center;gap:8px;font-size:.75rem;color:var(--muted2);
+  cursor:pointer;margin-top:16px;user-select:none;width:fit-content;}
+.ref-toggle:hover{color:var(--text);}
+.ref-body{display:none;margin-top:10px;overflow-x:auto;border-radius:10px;border:1px solid var(--border);}
+.ref-body.open{display:block;}
+table.ref{width:100%;border-collapse:collapse;font-size:.72rem;}
+table.ref th{background:#0d0e1a;padding:8px 10px;text-align:center;color:var(--muted2);
+  font-weight:600;letter-spacing:.04em;border-bottom:1px solid var(--border);}
+table.ref td{padding:7px 10px;text-align:center;border-top:1px solid #1c1f3540;
+  font-family:'Courier New',monospace;font-size:.72rem;}
+table.ref tr:hover td{background:#ffffff03;}
+
+footer{position:relative;z-index:1;border-top:1px solid var(--border);padding:24px 40px;
+  display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;}
+.foot-logo{font-family:var(--fh);font-size:1.1rem;font-weight:800;
+  background:linear-gradient(120deg,#00e5ff,#a78bfa);
+  -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;}
+.foot-txt{font-size:.78rem;color:var(--muted);}
+
+@media(max-width:640px){
+  nav{padding:0 16px;}
+  .hero{padding:36px 16px 24px;}
+  main{padding:0 14px 60px;}
+  .io-grid{grid-template-columns:1fr;gap:8px;}
+  .dir-btn{margin:0 auto;}
+  footer{padding:20px 16px;}
+}
+</style>
+</head>
+<body>
+<div class="blob b1"></div><div class="blob b2"></div><div class="blob b3"></div>
+
+<nav>
+  <a class="nav-logo" href="index.html">Toolzy</a>
+  <a class="nav-back" href="index.html">
+    <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+    All Tools
+  </a>
+</nav>
+
+<section class="hero">
+  <div class="badge">📝 Text / Code Converter</div>
+  <h1 class="hero-title">Text / Code <span>Converter</span></h1>
+  <p class="hero-sub">Base64, Morse Code, ASCII, and URL Encoder — all in one tool.</p>
+</section>
+
+<div class="tab-bar">
+  <button class="tab-btn active" onclick="switchTab('base64',this)">🔐 Base64</button>
+  <button class="tab-btn" onclick="switchTab('morse',this)">📡 Morse Code</button>
+  <button class="tab-btn" onclick="switchTab('ascii',this)">🔡 ASCII</button>
+  <button class="tab-btn" onclick="switchTab('url',this)">🌐 URL Encode</button>
+</div>
+
+<main>
+
+<!-- ═══════ BASE64 ═══════ -->
+<div class="conv-panel active" id="panel-base64">
+  <div class="panel">
+    <div class="panel-title"><span>🔐</span> Text ↔ Base64</div>
+    <div class="io-grid">
+      <div class="io-box">
+        <div class="io-label">Plain Text</div>
+        <textarea class="io-ta" id="b64-text" placeholder="Type or paste text here…" oninput="b64Encode()"></textarea>
+      </div>
+      <button class="dir-btn" onclick="b64Swap()" title="Swap">⇄</button>
+      <div class="io-box">
+        <div class="io-label">Base64 Encoded</div>
+        <textarea class="io-ta output" id="b64-encoded" placeholder="Base64 output…" oninput="b64Decode()"></textarea>
+      </div>
+    </div>
+    <div class="copy-row">
+      <button class="copy-btn" onclick="copyTA('b64-text',this)">📋 Copy Text</button>
+      <button class="copy-btn" onclick="copyTA('b64-encoded',this)">📋 Copy Base64</button>
+      <button class="clear-btn" onclick="clearPanel('b64-text','b64-encoded')">✕ Clear</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════ MORSE ═══════ -->
+<div class="conv-panel" id="panel-morse">
+  <div class="panel">
+    <div class="panel-title"><span>📡</span> Text ↔ Morse Code</div>
+    <div class="io-grid">
+      <div class="io-box">
+        <div class="io-label">Plain Text</div>
+        <textarea class="io-ta" id="morse-text" placeholder="Type text here…" oninput="morseEncode()"></textarea>
+      </div>
+      <button class="dir-btn" onclick="morseSwap()" title="Swap">⇄</button>
+      <div class="io-box">
+        <div class="io-label">Morse Code</div>
+        <textarea class="io-ta output" id="morse-code" placeholder="Morse output… (· and −)" oninput="morseDecode()"></textarea>
+      </div>
+    </div>
+    <div class="copy-row">
+      <button class="copy-btn" onclick="copyTA('morse-text',this)">📋 Copy Text</button>
+      <button class="copy-btn" onclick="copyTA('morse-code',this)">📋 Copy Morse</button>
+      <button class="clear-btn" onclick="clearPanel('morse-text','morse-code')">✕ Clear</button>
+    </div>
+    <!-- Morse reference -->
+    <div class="morse-ref">
+      <div class="morse-ref-toggle" onclick="toggleMorseRef(this)">▶ Morse Code Reference Chart</div>
+      <div class="morse-ref-body" id="morseRefBody"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════ ASCII ═══════ -->
+<div class="conv-panel" id="panel-ascii">
+  <div class="panel">
+    <div class="panel-title"><span>🔡</span> Text ↔ ASCII Codes</div>
+    <div class="io-grid">
+      <div class="io-box">
+        <div class="io-label">Plain Text</div>
+        <textarea class="io-ta" id="ascii-text" placeholder="Type text here…" oninput="asciiEncode()"></textarea>
+      </div>
+      <button class="dir-btn" onclick="asciiSwap()" title="Swap">⇄</button>
+      <div class="io-box">
+        <div class="io-label">ASCII Codes (space-separated)</div>
+        <textarea class="io-ta output" id="ascii-codes" placeholder="e.g. 72 101 108 108 111" oninput="asciiDecode()"></textarea>
+      </div>
+    </div>
+    <div class="copy-row">
+      <button class="copy-btn" onclick="copyTA('ascii-text',this)">📋 Copy Text</button>
+      <button class="copy-btn" onclick="copyTA('ascii-codes',this)">📋 Copy ASCII</button>
+      <button class="clear-btn" onclick="clearPanel('ascii-text','ascii-codes')">✕ Clear</button>
+    </div>
+    <div class="ref-toggle" onclick="toggleRef('ascii-ref',this)">▶ Show ASCII Table (32–127)</div>
+    <div class="ref-body" id="ascii-ref">
+      <table class="ref">
+        <thead><tr><th>Dec</th><th>Hex</th><th>Char</th><th>Dec</th><th>Hex</th><th>Char</th><th>Dec</th><th>Hex</th><th>Char</th></tr></thead>
+        <tbody id="ascii-table-body"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════ URL ENCODE ═══════ -->
+<div class="conv-panel" id="panel-url">
+  <div class="panel">
+    <div class="panel-title"><span>🌐</span> URL Encode / Decode</div>
+    <div class="io-grid">
+      <div class="io-box">
+        <div class="io-label">Plain / Decoded URL</div>
+        <textarea class="io-ta" id="url-plain" placeholder="https://example.com/search?q=hello world&lang=en" oninput="urlEncode()"></textarea>
+      </div>
+      <button class="dir-btn" onclick="urlSwap()" title="Swap">⇄</button>
+      <div class="io-box">
+        <div class="io-label">URL Encoded</div>
+        <textarea class="io-ta output" id="url-encoded" placeholder="Encoded output…" oninput="urlDecode()"></textarea>
+      </div>
+    </div>
+    <div class="copy-row">
+      <button class="copy-btn" onclick="copyTA('url-plain',this)">📋 Copy Plain</button>
+      <button class="copy-btn" onclick="copyTA('url-encoded',this)">📋 Copy Encoded</button>
+      <button class="clear-btn" onclick="clearPanel('url-plain','url-encoded')">✕ Clear</button>
+    </div>
+  </div>
+</div>
+
+</main>
+
+<footer>
+  <div class="foot-logo">Toolzy</div>
+  <div class="foot-txt">© 2025 Toolzy · Free tools for everyone · Built with ❤️</div>
+  <div class="foot-txt">53 tools · 10 games · Always free</div>
+</footer>
+
+<script>
+// ── Tab switch ────────────────────────────────────────────────
+function switchTab(id, btn){
+  document.querySelectorAll('.conv-panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('panel-'+id).classList.add('active');
+  btn.classList.add('active');
+}
+
+// ── Copy / Clear ──────────────────────────────────────────────
+async function copyTA(id, btn){
+  const val = document.getElementById(id).value;
+  if(!val) return;
+  await navigator.clipboard.writeText(val).catch(()=>{});
+  const orig = btn.textContent;
+  btn.classList.add('copied');
+  btn.textContent = '✅ Copied!';
+  setTimeout(()=>{ btn.classList.remove('copied'); btn.textContent = orig; }, 1500);
+}
+function clearPanel(a, b){
+  document.getElementById(a).value = '';
+  document.getElementById(b).value = '';
+}
+
+// ── BASE64 ────────────────────────────────────────────────────
+function b64Encode(){
+  const txt = document.getElementById('b64-text').value;
+  const out = document.getElementById('b64-encoded');
+  out.classList.remove('error');
+  try { out.value = txt ? btoa(unescape(encodeURIComponent(txt))) : ''; }
+  catch(e){ out.value = 'Error: invalid characters'; out.classList.add('error'); }
+}
+function b64Decode(){
+  const enc = document.getElementById('b64-encoded').value;
+  const out = document.getElementById('b64-text');
+  out.classList.remove('error');
+  try { out.value = enc ? decodeURIComponent(escape(atob(enc.trim()))) : ''; }
+  catch(e){ out.value = 'Error: invalid Base64'; out.classList.add('error'); }
+}
+function b64Swap(){
+  const a = document.getElementById('b64-text').value;
+  const b = document.getElementById('b64-encoded').value;
+  document.getElementById('b64-text').value = b;
+  document.getElementById('b64-encoded').value = a;
+}
+
+// ── MORSE ─────────────────────────────────────────────────────
+const MORSE_MAP = {
+  A:'.-', B:'-...', C:'-.-.', D:'-..', E:'.', F:'..-.', G:'--.', H:'....',
+  I:'..', J:'.---', K:'-.-', L:'.-..', M:'--', N:'-.', O:'---', P:'.--.',
+  Q:'--.-', R:'.-.', S:'...', T:'-', U:'..-', V:'...-', W:'.--', X:'-..-',
+  Y:'-.--', Z:'--..',
+  '0':'-----','1':'.----','2':'..---','3':'...--','4':'....-','5':'.....',
+  '6':'-....','7':'--...','8':'---..','9':'----.',
+  '.':'.-.-.-',',':'--..--','?':'..--..','!':'-.-.--','/':'-..-.',
+  '(':'-.--.', ')':'-.--.-', '-':'-....-', '_':'..--.-', '@':'.--.-.',
+};
+const MORSE_REV = Object.fromEntries(Object.entries(MORSE_MAP).map(([k,v])=>[v,k]));
+
+function morseEncode(){
+  const txt = document.getElementById('morse-text').value.toUpperCase();
+  const out = document.getElementById('morse-code');
+  out.classList.remove('error');
+  out.value = txt.split('').map(c=>{
+    if(c===' ') return '/';
+    return MORSE_MAP[c] || '?';
+  }).join(' ');
+}
+function morseDecode(){
+  const code = document.getElementById('morse-code').value.trim();
+  const out = document.getElementById('morse-text');
+  out.classList.remove('error');
+  out.value = code.split(' / ').map(word=>
+    word.split(' ').map(sym=> MORSE_REV[sym] || (sym===''?'':'?')).join('')
+  ).join(' ');
+}
+function morseSwap(){
+  const a = document.getElementById('morse-text').value;
+  const b = document.getElementById('morse-code').value;
+  document.getElementById('morse-text').value = b;
+  document.getElementById('morse-code').value = a;
+}
+
+// Build morse reference
+function buildMorseRef(){
+  const body = document.getElementById('morseRefBody');
+  let html = '';
+  for(const [char, code] of Object.entries(MORSE_MAP)){
+    html += `<div class="mc"><span class="mc-char">${char}</span><span class="mc-code">${code}</span></div>`;
+  }
+  body.innerHTML = html;
+}
+function toggleMorseRef(el){
+  const body = document.getElementById('morseRefBody');
+  body.classList.toggle('open');
+  el.textContent = body.classList.contains('open')
+    ? '▼ Morse Code Reference Chart'
+    : '▶ Morse Code Reference Chart';
+}
+
+// ── ASCII ─────────────────────────────────────────────────────
+function asciiEncode(){
+  const txt = document.getElementById('ascii-text').value;
+  const out = document.getElementById('ascii-codes');
+  out.classList.remove('error');
+  out.value = txt ? [...txt].map(c=>c.charCodeAt(0)).join(' ') : '';
+}
+function asciiDecode(){
+  const codes = document.getElementById('ascii-codes').value.trim();
+  const out = document.getElementById('ascii-text');
+  out.classList.remove('error');
+  if(!codes){ out.value=''; return; }
+  try {
+    out.value = codes.split(/\s+/).map(n=>{
+      const code = parseInt(n);
+      if(isNaN(code)) throw new Error();
+      return String.fromCharCode(code);
+    }).join('');
+  } catch(e){
+    out.value='Error: invalid codes'; out.classList.add('error');
+  }
+}
+function asciiSwap(){
+  const a = document.getElementById('ascii-text').value;
+  const b = document.getElementById('ascii-codes').value;
+  document.getElementById('ascii-text').value = b;
+  document.getElementById('ascii-codes').value = a;
+}
+function buildAsciiTable(){
+  const tbody = document.getElementById('ascii-table-body');
+  let html = '';
+  for(let i=32; i<=126; i+=3){
+    const row = [i, i+1, i+2].map(c=>{
+      if(c > 126) return '<td></td><td></td><td></td>';
+      const ch = c < 33 ? 'SPC' : String.fromCharCode(c);
+      return `<td>${c}</td><td>${c.toString(16).toUpperCase()}</td><td style="color:var(--a2)">${ch}</td>`;
+    });
+    html += `<tr>${row.join('')}</tr>`;
+  }
+  tbody.innerHTML = html;
+}
+function toggleRef(id, el){
+  const body = document.getElementById(id);
+  body.classList.toggle('open');
+  el.textContent = body.classList.contains('open')
+    ? '▼ Hide ASCII Table'
+    : '▶ Show ASCII Table (32–127)';
+}
+
+// ── URL ───────────────────────────────────────────────────────
+function urlEncode(){
+  const txt = document.getElementById('url-plain').value;
+  document.getElementById('url-encoded').value = txt ? encodeURIComponent(txt) : '';
+}
+function urlDecode(){
+  const enc = document.getElementById('url-encoded').value;
+  const out = document.getElementById('url-plain');
+  out.classList.remove('error');
+  try { out.value = enc ? decodeURIComponent(enc) : ''; }
+  catch(e){ out.value='Error: invalid encoding'; out.classList.add('error'); }
+}
+function urlSwap(){
+  const a = document.getElementById('url-plain').value;
+  const b = document.getElementById('url-encoded').value;
+  document.getElementById('url-plain').value = b;
+  document.getElementById('url-encoded').value = a;
+}
+
+// Init
+buildMorseRef();
+buildAsciiTable();
+</script>
+</body>
+</html>

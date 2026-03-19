@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>AXIOM — Scientific Calculator</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=JetBrains+Mono:wght@300;400;600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+
+:root{
+  --bg:#05050d;
+  --surface:#080812;
+  --border:#1c1c38;
+  --border2:#2a2a50;
+  --cyan:#00e5ff;
+  --orange:#ff6b35;
+  --violet:#9b5de5;
+  --green:#00f5a0;
+  --red:#ff4466;
+  --text:#ccd6ff;
+  --text-dim:#3d4a70;
+  --text-med:#7080aa;
+}
+
+html,body{
+  width:100%;height:100%;
+  overflow:hidden;
+  background:var(--bg);
+  font-family:'JetBrains Mono',monospace;
+  color:var(--text);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+
+body::before{
+  content:'';position:fixed;inset:0;
+  background-image:
+    linear-gradient(rgba(0,229,255,0.018) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(0,229,255,0.018) 1px,transparent 1px);
+  background-size:36px 36px;
+  pointer-events:none;
+  mask-image:radial-gradient(ellipse 70% 70% at 50% 50%,black 0%,transparent 90%);
+}
+
+/* ── OUTER SHELL ── */
+.shell{
+  width:100%;max-width:820px;
+  height:100vh;
+  display:flex;flex-direction:column;
+  padding:8px 10px;
+  position:relative;z-index:1;
+}
+
+/* ── TOP BAR ── */
+.topbar{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 4px 6px;flex-shrink:0;
+}
+.brand{display:flex;align-items:center;gap:8px;}
+.brand-icon{
+  width:24px;height:24px;border:1.5px solid var(--cyan);border-radius:5px;
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Orbitron',sans-serif;font-size:11px;font-weight:900;
+  color:var(--cyan);box-shadow:0 0 10px rgba(0,229,255,0.35);
+}
+.brand-name{font-family:'Orbitron',sans-serif;font-size:12px;font-weight:900;letter-spacing:5px;}
+.badges{display:flex;gap:5px;align-items:center;}
+.badge{font-size:8px;letter-spacing:1.5px;padding:2px 7px;border-radius:20px;border:1px solid;font-weight:600;}
+.b-angle{color:var(--cyan);border-color:rgba(0,229,255,0.4);background:rgba(0,229,255,0.06);cursor:pointer;}
+.b-angle:hover{background:rgba(0,229,255,0.14);}
+.b-hyp{color:var(--violet);border-color:rgba(155,93,229,0.35);background:rgba(155,93,229,0.06);opacity:0;transition:opacity .2s;}
+.b-hyp.on{opacity:1;}
+.b-mem{color:var(--green);border-color:rgba(0,245,160,0.35);background:rgba(0,245,160,0.06);opacity:0;transition:opacity .2s;}
+.b-mem.on{opacity:1;}
+
+/* ── DISPLAY ── */
+.display{
+  flex-shrink:0;background:#02020a;
+  border:1px solid var(--border);border-radius:11px;
+  padding:8px 14px 6px;margin-bottom:5px;
+  position:relative;overflow:hidden;
+}
+.display::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:1.5px;
+  background:linear-gradient(90deg,transparent 5%,var(--cyan) 35%,var(--violet) 65%,transparent 95%);
+}
+.display::after{
+  content:'';position:absolute;inset:0;
+  background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,0,0,0.06) 3px,rgba(0,0,0,0.06) 4px);
+  pointer-events:none;
+}
+.d-history{font-size:9px;color:var(--text-dim);text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.d-expr{font-size:13px;color:var(--text-med);text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-height:20px;line-height:1.5;}
+.d-result{
+  font-family:'Orbitron',sans-serif;font-size:28px;font-weight:700;color:var(--cyan);
+  text-align:right;text-shadow:0 0 16px rgba(0,229,255,0.7),0 0 35px rgba(0,229,255,0.2);
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-height:38px;line-height:1.35;
+}
+.d-result.err{color:var(--red);font-size:13px;text-shadow:0 0 10px rgba(255,68,102,0.5);}
+@keyframes glow-flash{
+  0%{text-shadow:0 0 16px rgba(0,229,255,0.7),0 0 35px rgba(0,229,255,0.2);}
+  50%{text-shadow:0 0 32px rgba(0,229,255,1),0 0 70px rgba(0,229,255,0.5);}
+  100%{text-shadow:0 0 16px rgba(0,229,255,0.7),0 0 35px rgba(0,229,255,0.2);}
+}
+.d-result.flash{animation:glow-flash .5s ease;}
+
+/* ── MAIN TWO-COLUMN ── */
+.main-grid{
+  flex:1;min-height:0;
+  display:grid;grid-template-columns:1fr 1fr;
+  gap:5px;
+}
+
+/* ── PANEL ── */
+.panel{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:11px;padding:5px;
+  display:flex;flex-direction:column;gap:3px;overflow:hidden;
+}
+.panel-label{
+  font-size:7px;letter-spacing:2.5px;color:var(--text-dim);
+  padding:0 3px 3px;border-bottom:1px solid var(--border);
+  flex-shrink:0;
+}
+
+/* ── ROW ── */
+.row{display:grid;gap:3px;}
+
+/* ── BUTTON BASE ── */
+.btn{
+  border-radius:6px;border:1px solid transparent;cursor:pointer;
+  font-family:'JetBrains Mono',monospace;
+  display:flex;align-items:center;justify-content:center;
+  user-select:none;position:relative;overflow:hidden;
+  transition:transform .08s,box-shadow .12s,border-color .12s;
+  -webkit-tap-highlight-color:transparent;
+  line-height:1;white-space:nowrap;
+  width:100%;height:100%;
+}
+.btn::after{content:'';position:absolute;inset:0;background:rgba(255,255,255,0);transition:background .1s;}
+.btn:hover::after{background:rgba(255,255,255,0.055);}
+.btn:active{transform:scale(0.9);}
+
+.bn{background:linear-gradient(180deg,#131325 0%,#0d0d1e 100%);border-color:#22224a;color:var(--text);font-size:17px;font-weight:600;}
+.bn:hover{border-color:rgba(0,229,255,0.45);box-shadow:0 0 8px rgba(0,229,255,0.12);}
+.bf{background:linear-gradient(180deg,#0b1320 0%,#070d18 100%);border-color:#122035;color:#6baadc;font-size:10.5px;}
+.bf:hover{border-color:rgba(107,170,220,0.5);color:#9ccee8;}
+.bo{background:linear-gradient(180deg,#1a0e08 0%,#130a06 100%);border-color:#2e1a10;color:var(--orange);font-size:16px;}
+.bo:hover{border-color:rgba(255,107,53,0.5);box-shadow:0 0 8px rgba(255,107,53,0.2);}
+.bm{background:linear-gradient(180deg,#0f0818 0%,#090510 100%);border-color:#1e1030;color:#9977cc;font-size:9.5px;}
+.bm:hover{border-color:rgba(155,93,229,0.5);color:var(--violet);}
+.bc{background:linear-gradient(180deg,#1a0808 0%,#100505 100%);border-color:#2e1010;color:var(--red);font-size:11px;}
+.bc:hover{border-color:rgba(255,68,102,0.5);box-shadow:0 0 8px rgba(255,68,102,0.2);}
+.bd{background:linear-gradient(180deg,#1a0e08 0%,#120a06 100%);border-color:#281a10;color:#e08050;font-size:13px;}
+.bd:hover{border-color:rgba(224,128,80,0.5);}
+.bx{background:linear-gradient(180deg,#05121a 0%,#040d12 100%);border-color:#0c2030;color:#44ddaa;font-size:13px;}
+.bx:hover{border-color:rgba(68,221,170,0.5);box-shadow:0 0 8px rgba(68,221,170,0.2);}
+.beq{
+  background:linear-gradient(135deg,#009dbb 0%,#00c8e8 50%,#00e5ff 100%);
+  border-color:var(--cyan);color:#000;
+  font-family:'Orbitron',sans-serif;font-size:18px;font-weight:900;
+  box-shadow:0 0 16px rgba(0,229,255,0.4),0 3px 10px rgba(0,229,255,0.2);
+}
+.beq:hover{box-shadow:0 0 28px rgba(0,229,255,0.65);}
+.bhyp{background:linear-gradient(180deg,rgba(155,93,229,0.1) 0%,rgba(155,93,229,0.05) 100%);border-color:rgba(155,93,229,0.3);color:var(--violet);font-size:8.5px;letter-spacing:1px;font-family:'Orbitron',sans-serif;}
+.bhyp.on{background:rgba(155,93,229,0.18);border-color:rgba(155,93,229,0.65);box-shadow:0 0 10px rgba(155,93,229,0.3);}
+
+/* ── MODAL ── */
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.88);backdrop-filter:blur(14px);z-index:500;align-items:center;justify-content:center;}
+.modal-bg.on{display:flex;}
+.modal{background:var(--surface);border:1px solid var(--border2);border-radius:16px;padding:22px;width:420px;max-width:96vw;max-height:88vh;overflow-y:auto;position:relative;box-shadow:0 0 50px rgba(0,229,255,0.1),0 40px 100px rgba(0,0,0,0.9);animation:modal-in .2s ease;}
+@keyframes modal-in{from{opacity:0;transform:scale(0.94) translateY(8px)}to{opacity:1;transform:none}}
+.modal::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent 5%,var(--green) 35%,var(--cyan) 65%,transparent 95%);border-radius:16px 16px 0 0;}
+.modal-title{font-family:'Orbitron',sans-serif;font-size:10px;font-weight:700;letter-spacing:4px;color:var(--cyan);text-align:center;margin-bottom:16px;}
+.modal-tabs{display:flex;gap:6px;margin-bottom:16px;}
+.mtab{flex:1;padding:7px;border-radius:7px;border:1px solid var(--border);background:transparent;color:var(--text-dim);font-family:'JetBrains Mono',monospace;font-size:10px;cursor:pointer;transition:all .18s;}
+.mtab.on{border-color:var(--cyan);color:var(--cyan);background:rgba(0,229,255,0.07);}
+.mfield{margin-bottom:10px;}
+.mlabel{display:block;font-size:7.5px;letter-spacing:2px;color:var(--text-dim);margin-bottom:5px;}
+.minput{width:100%;background:#03030c;border:1px solid var(--border);border-radius:7px;padding:8px 11px;color:var(--text);font-family:'JetBrains Mono',monospace;font-size:12px;outline:none;transition:all .18s;}
+.minput:focus{border-color:var(--cyan);box-shadow:0 0 10px rgba(0,229,255,0.1);}
+select.minput{cursor:pointer;}
+.mrow{display:grid;grid-template-columns:1fr 1fr;gap:9px;}
+.mresult{margin-top:12px;padding:11px 14px;background:#03030c;border:1px solid var(--border);border-radius:8px;display:none;}
+.mresult.on{display:block;}
+.mres-label{font-size:7.5px;letter-spacing:2px;color:var(--text-dim);margin-bottom:4px;}
+.mres-val{font-family:'Orbitron',sans-serif;font-size:18px;color:var(--green);text-shadow:0 0 12px rgba(0,245,160,0.5);}
+.mres-val.err{color:var(--red);font-size:11px;text-shadow:none;}
+.mbtns{display:flex;gap:7px;margin-top:14px;}
+.mbtn{flex:1;padding:10px;border-radius:8px;border:1px solid;font-family:'JetBrains Mono',monospace;font-size:10px;cursor:pointer;transition:all .18s;letter-spacing:1px;}
+.mbtn.primary{background:linear-gradient(135deg,#00b0c8,#00e5ff);border-color:var(--cyan);color:#000;font-weight:700;}
+.mbtn.primary:hover{box-shadow:0 0 16px rgba(0,229,255,0.4);}
+.mbtn.sec{background:transparent;border-color:var(--border2);color:var(--text-dim);}
+.mbtn.sec:hover{border-color:var(--text-dim);color:var(--text);}
+::-webkit-scrollbar{width:3px;}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px;}
+</style>
+</head>
+<body>
+<div class="shell">
+
+  <!-- TOP BAR -->
+  <div class="topbar">
+    <div class="brand">
+      <div class="brand-icon">∑</div>
+      <div class="brand-name">Toolzy</div>
+    </div>
+    <div class="badges">
+      <span class="badge b-angle" id="angleBadge" onclick="cycleAngle()" title="Cycle: DEG → RAD → GRAD">DEG</span>
+      <span class="badge b-hyp" id="hypBadge">HYP</span>
+      <span class="badge b-mem" id="memBadge">M</span>
+    </div>
+  </div>
+
+  <!-- DISPLAY -->
+  <div class="display">
+    <div class="d-history" id="dHistory">&nbsp;</div>
+    <div class="d-expr"    id="dExpr">0</div>
+    <div class="d-result"  id="dResult"></div>
+  </div>
+
+  <!-- TWO PANELS -->
+  <div class="main-grid">
+
+    <!-- ══ LEFT: SCIENTIFIC ══ -->
+    <div class="panel">
+      <div class="panel-label">SCIENTIFIC FUNCTIONS</div>
+
+      <!-- NAV TABS -->
+      <div style="display:flex;gap:3px;flex-shrink:0;margin-bottom:2px;">
+        <button id="navBase"  onclick="switchSciTab('base')"
+          style="flex:1;height:26px;border-radius:6px;border:1px solid rgba(0,229,255,0.5);
+                 background:rgba(0,229,255,0.12);color:var(--cyan);
+                 font-family:'Orbitron',sans-serif;font-size:8px;letter-spacing:2px;cursor:pointer;">
+          BASE
+        </button>
+        <button id="navPower" onclick="switchSciTab('power')"
+          style="flex:1;height:26px;border-radius:6px;border:1px solid var(--border);
+                 background:transparent;color:var(--text-dim);
+                 font-family:'Orbitron',sans-serif;font-size:8px;letter-spacing:2px;cursor:pointer;">
+          POWER
+        </button>
+      </div>
+
+      <!-- HYP + MEM row (always visible) -->
+      <div class="row" style="grid-template-columns:repeat(4,1fr);height:30px;flex-shrink:0;">
+        <button class="btn bhyp" id="hypBtn" onclick="toggleHyp()">HYP</button>
+        <button class="btn bm" onclick="memClear()">MC</button>
+        <button class="btn bm" onclick="memAdd()">M+</button>
+        <button class="btn bm" onclick="memRecall()">MR</button>
+      </div>
+
+      <!-- ═══ BASE PAGE ═══ -->
+      <div id="sciBase" style="display:flex;flex-direction:column;gap:3px;flex:1;min-height:0;">
+        <!-- Trig -->
+        <div class="row" style="grid-template-columns:repeat(3,1fr);flex:1;">
+          <button class="btn bf" id="sinBtn"  onclick="inFn('sin(')">sin</button>
+          <button class="btn bf" id="cosBtn"  onclick="inFn('cos(')">cos</button>
+          <button class="btn bf" id="tanBtn"  onclick="inFn('tan(')">tan</button>
+        </div>
+        <div class="row" style="grid-template-columns:repeat(3,1fr);flex:1;">
+          <button class="btn bf" id="asinBtn" onclick="inFn('asin(')">sin⁻¹</button>
+          <button class="btn bf" id="acosBtn" onclick="inFn('acos(')">cos⁻¹</button>
+          <button class="btn bf" id="atanBtn" onclick="inFn('atan(')">tan⁻¹</button>
+        </div>
+        <!-- Log -->
+        <div class="row" style="grid-template-columns:repeat(3,1fr);flex:1;">
+          <button class="btn bf" onclick="inFn('log(')">log</button>
+          <button class="btn bf" onclick="inFn('ln(')">ln</button>
+          <button class="btn bf" onclick="inFn('log2(')">log₂</button>
+        </div>
+        <!-- Constants -->
+        <div class="row" style="grid-template-columns:repeat(3,1fr);flex:1;">
+          <button class="btn bf" onclick="inSym('π')">π</button>
+          <button class="btn bf" onclick="inSym('ℯ')">e</button>
+          <button class="btn bf" onclick="inSym('φ')">φ</button>
+        </div>
+        <!-- Comb -->
+        <div class="row" style="grid-template-columns:repeat(3,1fr);flex:1;">
+          <button class="btn bf" onclick="inSuffix('!')">n!</button>
+          <button class="btn bf" onclick="inFn('nPr(')">nPr</button>
+          <button class="btn bf" onclick="inFn('nCr(')">nCr</button>
+        </div>
+        <!-- Special -->
+        <div class="row" style="grid-template-columns:repeat(3,1fr);flex:1;">
+          <button class="btn bf" onclick="inFn('abs(')">|x|</button>
+          <button class="btn bf" onclick="inFn('floor(')">⌊x⌋</button>
+          <button class="btn bf" onclick="inFn('ceil(')">⌈x⌉</button>
+        </div>
+        <!-- atan2 / hypot / sign -->
+        <div class="row" style="grid-template-columns:repeat(3,1fr);flex:1;">
+          <button class="btn bf" onclick="inFn('atan2(')">atan2</button>
+          <button class="btn bf" onclick="inFn('hypot(')">hypot</button>
+          <button class="btn bf" onclick="inFn('sign(')">sign</button>
+        </div>
+      </div>
+
+      <!-- ═══ POWER PAGE ═══ -->
+      <div id="sciPower" style="display:none;flex-direction:column;gap:3px;flex:1;min-height:0;">
+        <!-- Exp -->
+        <div class="row" style="grid-template-columns:repeat(3,1fr);flex:1;">
+          <button class="btn bf" onclick="inFn('pow10(')">10ˣ</button>
+          <button class="btn bf" onclick="inFn('exp(')">eˣ</button>
+          <button class="btn bf" onclick="inSym('^')">xʸ</button>
+        </div>
+        <!-- Powers -->
+        <div class="row" style="grid-template-columns:repeat(3,1fr);flex:1;">
+          <button class="btn bf" onclick="inSuffix('²')">x²</button>
+          <button class="btn bf" onclick="inSuffix('³')">x³</button>
+          <button class="btn bf" onclick="inFn('1/(')">1/x</button>
+        </div>
+        <!-- Roots -->
+        <div class="row" style="grid-template-columns:repeat(3,1fr);flex:1;">
+          <button class="btn bf" onclick="inFn('√(')">√x</button>
+          <button class="btn bf" onclick="inFn('∛(')">∛x</button>
+          <button class="btn bf" onclick="inFn('nrt(')">ʸ√x</button>
+        </div>
+        <!-- Hyperbolic -->
+        <div class="row" style="grid-template-columns:repeat(3,1fr);flex:1;">
+          <button class="btn bf" onclick="inFn('sinh(')">sinh</button>
+          <button class="btn bf" onclick="inFn('cosh(')">cosh</button>
+          <button class="btn bf" onclick="inFn('tanh(')">tanh</button>
+        </div>
+        <div class="row" style="grid-template-columns:repeat(2,1fr);flex:1;">
+          <button class="btn bf" onclick="inFn('asinh(')">sinh⁻¹</button>
+          <button class="btn bf" onclick="inFn('acosh(')">cosh⁻¹</button>
+        </div>
+        <!-- Round -->
+        <div class="row" style="grid-template-columns:repeat(3,1fr);flex:1;">
+          <button class="btn bf" onclick="inFn('round(')">round</button>
+          <button class="btn bf" onclick="inFn('trunc(')">trunc</button>
+          <button class="btn bf" onclick="inFn('frac(')">frac</button>
+        </div>
+        <!-- Calculus -->
+        <div class="row" style="grid-template-columns:1fr 1fr;flex:1;">
+          <button class="btn bx" onclick="openModal('integrate')">∫ dx</button>
+          <button class="btn bx" onclick="openModal('diff')">d/dx</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ RIGHT: NUMPAD ══ -->
+    <div class="panel">
+      <div class="panel-label">NUMBER PAD &amp; OPERATORS</div>
+
+      <!-- Utility row -->
+      <div class="row" style="grid-template-columns:repeat(4,1fr);height:32px;flex-shrink:0;">
+        <button class="btn bf" onclick="inSym('E')" style="font-size:9px;">EXP</button>
+        <button class="btn bf" onclick="inFn('round(')">rnd</button>
+        <button class="btn bf" onclick="inSym('%')">mod</button>
+        <button class="btn bm" onclick="memSub()">M−</button>
+      </div>
+
+      <!-- Parens + ANS + rand -->
+      <div class="row" style="grid-template-columns:repeat(4,1fr);flex:1;max-height:40px;">
+        <button class="btn bf" onclick="inSym('(')">(</button>
+        <button class="btn bf" onclick="inSym(')')">)</button>
+        <button class="btn bf" onclick="insertAns()">ANS</button>
+        <button class="btn bf" onclick="insertRand()">ran#</button>
+      </div>
+
+      <!-- 7 8 9 ÷ -->
+      <div class="row" style="grid-template-columns:repeat(4,1fr);flex:1;">
+        <button class="btn bn" onclick="inNum('7')">7</button>
+        <button class="btn bn" onclick="inNum('8')">8</button>
+        <button class="btn bn" onclick="inNum('9')">9</button>
+        <button class="btn bo" onclick="inSym('÷')">÷</button>
+      </div>
+
+      <!-- 4 5 6 × -->
+      <div class="row" style="grid-template-columns:repeat(4,1fr);flex:1;">
+        <button class="btn bn" onclick="inNum('4')">4</button>
+        <button class="btn bn" onclick="inNum('5')">5</button>
+        <button class="btn bn" onclick="inNum('6')">6</button>
+        <button class="btn bo" onclick="inSym('×')">×</button>
+      </div>
+
+      <!-- 1 2 3 − -->
+      <div class="row" style="grid-template-columns:repeat(4,1fr);flex:1;">
+        <button class="btn bn" onclick="inNum('1')">1</button>
+        <button class="btn bn" onclick="inNum('2')">2</button>
+        <button class="btn bn" onclick="inNum('3')">3</button>
+        <button class="btn bo" onclick="inSym('−')">−</button>
+      </div>
+
+      <!-- 0 . ± + -->
+      <div class="row" style="grid-template-columns:repeat(4,1fr);flex:1;">
+        <button class="btn bn" onclick="inNum('0')">0</button>
+        <button class="btn bn" onclick="inNum('.')">.</button>
+        <button class="btn bf" onclick="toggleSign()">±</button>
+        <button class="btn bo" onclick="inSym('+')">+</button>
+      </div>
+
+      <!-- DEL AC = -->
+      <div class="row" style="grid-template-columns:1fr 1fr 2fr;flex:1;max-height:50px;">
+        <button class="btn bd" onclick="delLast()">⌫</button>
+        <button class="btn bc" onclick="clearAll()">AC</button>
+        <button class="btn beq" onclick="calculate()">=</button>
+      </div>
+    </div>
+
+  </div><!-- /main-grid -->
+</div><!-- /shell -->
+
+
+<!-- CALCULUS MODAL -->
+<div class="modal-bg" id="modalBg">
+  <div class="modal">
+    <div class="modal-title">CALCULUS ENGINE</div>
+    <div class="modal-tabs">
+      <button class="mtab on" id="tab-integrate" onclick="switchTab('integrate')">∫  Integration</button>
+      <button class="mtab"    id="tab-diff"      onclick="switchTab('diff')">d/dx  Differentiation</button>
+    </div>
+
+    <div id="panel-integrate">
+      <div class="mfield">
+        <label class="mlabel">FUNCTION f(x)</label>
+        <input class="minput" id="intFn" placeholder="e.g.  x^2 + sin(x)" />
+      </div>
+      <div class="mrow">
+        <div class="mfield"><label class="mlabel">LOWER BOUND a</label><input class="minput" id="intA" placeholder="0" /></div>
+        <div class="mfield"><label class="mlabel">UPPER BOUND b</label><input class="minput" id="intB" placeholder="1" /></div>
+      </div>
+      <div class="mrow">
+        <div class="mfield">
+          <label class="mlabel">SUBDIVISIONS</label>
+          <select class="minput" id="intN">
+            <option value="100">100 (fast)</option>
+            <option value="1000" selected>1,000 (standard)</option>
+            <option value="10000">10,000 (high)</option>
+            <option value="100000">100,000 (ultra)</option>
+          </select>
+        </div>
+        <div class="mfield">
+          <label class="mlabel">METHOD</label>
+          <select class="minput" id="intMethod">
+            <option value="simpson">Simpson's Rule</option>
+            <option value="gauss">Gauss-Legendre</option>
+            <option value="trap">Trapezoidal</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div id="panel-diff" style="display:none">
+      <div class="mfield">
+        <label class="mlabel">FUNCTION f(x)</label>
+        <input class="minput" id="diffFn" placeholder="e.g.  x^3 + cos(x)" />
+      </div>
+      <div class="mfield">
+        <label class="mlabel">EVALUATE AT x =</label>
+        <input class="minput" id="diffX" placeholder="e.g.  1.5  or  π/4" />
+      </div>
+      <div class="mrow">
+        <div class="mfield">
+          <label class="mlabel">DERIVATIVE ORDER</label>
+          <select class="minput" id="diffOrder">
+            <option value="1">1st  f'(x)</option>
+            <option value="2">2nd  f''(x)</option>
+            <option value="3">3rd  f'''(x)</option>
+            <option value="4">4th  f⁽⁴⁾(x)</option>
+          </select>
+        </div>
+        <div class="mfield">
+          <label class="mlabel">METHOD</label>
+          <select class="minput" id="diffMethod">
+            <option value="central">Central Difference</option>
+            <option value="forward">Forward Difference</option>
+            <option value="backward">Backward Difference</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="mresult" id="mResult">
+      <div class="mres-label" id="mResLabel">RESULT</div>
+      <div class="mres-val"   id="mResVal"></div>
+    </div>
+    <div class="mbtns">
+      <button class="mbtn sec" onclick="closeModal()">CLOSE</button>
+      <button class="mbtn primary" onclick="computeCalculus()">COMPUTE</button>
+    </div>
+  </div>
+</div>
+
+<script>
+let expr='',angleMode='DEG',hypMode=false,memory=0,lastAns=0;
+
+function render(){
+  const ex=document.getElementById('dExpr'),re=document.getElementById('dResult');
+  ex.textContent=expr||'0';
+  if(expr){try{const v=evaluate(expr);if(typeof v==='number'&&isFinite(v)){re.textContent='= '+fmt(v);re.classList.remove('err');}else re.textContent='';}catch{re.textContent='';}}
+  else re.textContent='';
+}
+function fmt(n){
+  if(n===0)return'0';if(!isFinite(n))return n>0?'∞':'−∞';
+  if(Math.abs(n)<1e-10&&n!==0)return n.toExponential(6);
+  if(Math.abs(n)>=1e13)return n.toExponential(6);
+  let s=parseFloat(n.toPrecision(12)).toString();
+  if(s.length>16)s=parseFloat(n.toPrecision(10)).toString();
+  return s;
+}
+
+function inNum(c){if(expr==='0'&&c!=='.')expr='';expr+=c;render();}
+function inSym(s){expr+=s;render();}
+function inFn(fn){
+  if(hypMode){const h={'sin(':'sinh(','cos(':'cosh(','tan(':'tanh(','asin(':'asinh(','acos(':'acosh(','atan(':'atanh('};if(h[fn])fn=h[fn];}
+  expr+=fn;render();
+}
+function inSuffix(s){
+  if(!expr)return;
+  if(s==='!')expr='fact('+expr+')';
+  else if(s==='²')expr='('+expr+')^2';
+  else if(s==='³')expr='('+expr+')^3';
+  render();
+}
+function delLast(){
+  if(!expr)return;
+  const multi=['sinh(','cosh(','tanh(','asinh(','acosh(','atanh(','sin(','cos(','tan(','asin(','acos(','atan(',
+    'log2(','log(','ln(','pow10(','exp(','abs(','nrt(','nPr(','nCr(','ceil(','floor(','round(','fact(','√(','∛(','1/(','trunc(','frac(','sign(','atan2(','hypot(','sinh(','cosh(','tanh(','asinh(','acosh(','atanh('];
+  for(const m of multi){if(expr.endsWith(m)){expr=expr.slice(0,-m.length);render();return;}}
+  expr=expr.slice(0,-1);render();
+}
+function clearAll(){expr='';document.getElementById('dHistory').innerHTML='&nbsp;';document.getElementById('dResult').textContent='';document.getElementById('dExpr').textContent='0';}
+function toggleSign(){if(!expr)return;expr=expr.startsWith('−')?expr.slice(1):'−'+expr;render();}
+function insertAns(){expr+=fmt(lastAns);render();}
+function insertRand(){const r=Math.random();expr+=parseFloat(r.toPrecision(10)).toString();render();}
+
+function switchSciTab(tab){
+  const isBase = tab==='base';
+  document.getElementById('sciBase').style.display  = isBase ? 'flex' : 'none';
+  document.getElementById('sciPower').style.display = isBase ? 'none' : 'flex';
+  const nb=document.getElementById('navBase'), np=document.getElementById('navPower');
+  nb.style.background      = isBase ? 'rgba(0,229,255,0.12)' : 'transparent';
+  nb.style.borderColor     = isBase ? 'rgba(0,229,255,0.5)'  : 'var(--border)';
+  nb.style.color           = isBase ? 'var(--cyan)'          : 'var(--text-dim)';
+  np.style.background      = isBase ? 'transparent'          : 'rgba(255,107,53,0.1)';
+  np.style.borderColor     = isBase ? 'var(--border)'        : 'rgba(255,107,53,0.5)';
+  np.style.color           = isBase ? 'var(--text-dim)'      : 'var(--orange)';
+}
+function cycleAngle(){const m=['DEG','RAD','GRAD'];angleMode=m[(m.indexOf(angleMode)+1)%3];document.getElementById('angleBadge').textContent=angleMode;}
+function toggleHyp(){
+  hypMode=!hypMode;
+  document.getElementById('hypBtn').classList.toggle('on',hypMode);
+  document.getElementById('hypBadge').classList.toggle('on',hypMode);
+  const L=hypMode?{sin:'sinh',cos:'cosh',tan:'tanh',asin:'sinh⁻¹',acos:'cosh⁻¹',atan:'tanh⁻¹'}:{sin:'sin',cos:'cos',tan:'tan',asin:'sin⁻¹',acos:'cos⁻¹',atan:'tan⁻¹'};
+  ['sin','cos','tan','asin','acos','atan'].forEach(k=>document.getElementById(k+'Btn').textContent=L[k]);
+}
+function memClear(){memory=0;document.getElementById('memBadge').classList.remove('on');}
+function memRecall(){expr+=fmt(memory);render();}
+function memAdd(){try{memory+=parseFloat(evaluate(expr))||0;document.getElementById('memBadge').classList.add('on');}catch{}}
+function memSub(){try{memory-=parseFloat(evaluate(expr))||0;document.getElementById('memBadge').classList.add('on');}catch{}}
+
+function toRad(x){if(angleMode==='DEG')return x*Math.PI/180;if(angleMode==='GRAD')return x*Math.PI/200;return x;}
+function fromRad(x){if(angleMode==='DEG')return x*180/Math.PI;if(angleMode==='GRAD')return x*200/Math.PI;return x;}
+function factorial(n){n=Math.round(n);if(n<0)return NaN;if(n>170)return Infinity;let r=1;for(let i=2;i<=n;i++)r*=i;return r;}
+function gammaFn(z){if(z<0.5)return Math.PI/(Math.sin(Math.PI*z)*gammaFn(1-z));z-=1;const c=[0.99999999999980993,676.5203681218851,-1259.1392167224028,771.32342877765313,-176.61502916214059,12.507343278686905,-0.13857109526572012,9.9843695780195716e-6,1.5056327351493116e-7];let x=c[0];for(let i=1;i<9;i++)x+=c[i]/(z+i);const t=z+7.5;return Math.sqrt(2*Math.PI)*Math.pow(t,z+0.5)*Math.exp(-t)*x;}
+function nPr(n,r){if(r>n||r<0)return 0;return factorial(n)/factorial(n-r);}
+function nCr(n,r){if(r>n||r<0)return 0;if(r===0||r===n)return 1;return factorial(n)/(factorial(r)*factorial(n-r));}
+
+function evaluate(raw){
+  let e=raw.replace(/×/g,'*').replace(/÷/g,'/').replace(/−/g,'-').replace(/\^/g,'**')
+    .replace(/(\d)E(\d)/g,'$1e$2').replace(/(\d)E(-)/g,'$1e-')
+    .replace(/π/g,'(Math.PI)').replace(/ℯ/g,'(Math.E)').replace(/φ/g,'((1+Math.sqrt(5))/2)')
+    .replace(/√\(/g,'sqrt(').replace(/∛\(/g,'cbrt(')
+    .replace(/(\d)\(/g,'$1*(').replace(/\)\(/g,')*(');
+  return new Function('toR','fromR','fact','gammaFn','nPr','nCr',`"use strict";
+const PI=Math.PI,E=Math.E;
+const sin=x=>Math.sin(toR(x));const cos=x=>Math.cos(toR(x));const tan=x=>Math.tan(toR(x));
+const asin=x=>fromR(Math.asin(x));const acos=x=>fromR(Math.acos(x));const atan=x=>fromR(Math.atan(x));
+const atan2=(y,x)=>fromR(Math.atan2(y,x));
+const sinh=Math.sinh;const cosh=Math.cosh;const tanh=Math.tanh;
+const asinh=Math.asinh;const acosh=Math.acosh;const atanh=Math.atanh;
+const log=x=>Math.log10(x);const ln=Math.log;const log2=Math.log2;
+const exp=Math.exp;const pow10=x=>Math.pow(10,x);const pow=Math.pow;
+const sqrt=Math.sqrt;const cbrt=Math.cbrt;const nrt=(n,x)=>Math.sign(x)*Math.pow(Math.abs(x),1/n);
+const abs=Math.abs;const ceil=Math.ceil;const floor=Math.floor;const round=Math.round;
+const trunc=Math.trunc;const sign=Math.sign;const hypot=Math.hypot;
+const frac=x=>x-Math.trunc(x);
+const max=Math.max;const min=Math.min;const rand=()=>Math.random();
+const gcd=(a,b)=>{a=Math.abs(Math.round(a));b=Math.abs(Math.round(b));while(b){let t=b;b=a%b;a=t;}return a;};
+const lcm=(a,b)=>Math.abs(a*b)/gcd(a,b);
+const gamma=gammaFn;
+return(${e});`)(toRad,fromRad,factorial,gammaFn,nPr,nCr);
+}
+
+function evalFx(fnStr,x){
+  let e=fnStr.replace(/×/g,'*').replace(/÷/g,'/').replace(/−/g,'-').replace(/\^/g,'**')
+    .replace(/π/g,'(Math.PI)').replace(/φ/g,'((1+Math.sqrt(5))/2)')
+    .replace(/√\(/g,'sqrt(').replace(/∛\(/g,'cbrt(')
+    .replace(/(\d)\(/g,'$1*(').replace(/\)\(/g,')*(');
+  return new Function('x','toR','fromR','fact','gammaFn','nPr','nCr',`"use strict";
+const PI=Math.PI,E=Math.E;
+const sin=v=>Math.sin(toR(v));const cos=v=>Math.cos(toR(v));const tan=v=>Math.tan(toR(v));
+const asin=v=>fromR(Math.asin(v));const acos=v=>fromR(Math.acos(v));const atan=v=>fromR(Math.atan(v));
+const sinh=Math.sinh;const cosh=Math.cosh;const tanh=Math.tanh;
+const asinh=Math.asinh;const acosh=Math.acosh;const atanh=Math.atanh;
+const log=v=>Math.log10(v);const ln=Math.log;const log2=Math.log2;
+const exp=Math.exp;const pow10=v=>Math.pow(10,v);const pow=Math.pow;
+const sqrt=Math.sqrt;const cbrt=Math.cbrt;const nrt=(n,v)=>Math.sign(v)*Math.pow(Math.abs(v),1/n);
+const abs=Math.abs;const ceil=Math.ceil;const floor=Math.floor;const round=Math.round;
+const gamma=gammaFn;
+return(${e});`)(x,toRad,fromRad,factorial,gammaFn,nPr,nCr);
+}
+
+function calculate(){
+  if(!expr)return;
+  try{
+    const result=evaluate(expr);
+    if(result===undefined||result===null)throw new Error();
+    const rs=fmt(result);
+    document.getElementById('dHistory').textContent=expr+'  =';
+    lastAns=result;expr=rs;
+    const re=document.getElementById('dResult');
+    re.textContent=rs;re.classList.remove('err','flash');void re.offsetWidth;re.classList.add('flash');
+    document.getElementById('dExpr').textContent=rs;
+  }catch{
+    const re=document.getElementById('dResult');re.textContent='SYNTAX ERROR';re.classList.add('err');re.classList.remove('flash');
+  }
+}
+
+let currentTab='integrate';
+function openModal(tab){document.getElementById('modalBg').classList.add('on');switchTab(tab);}
+function closeModal(){document.getElementById('modalBg').classList.remove('on');document.getElementById('mResult').classList.remove('on');}
+function switchTab(tab){
+  currentTab=tab;
+  ['integrate','diff'].forEach(t=>{document.getElementById('tab-'+t).classList.toggle('on',t===tab);document.getElementById('panel-'+t).style.display=t===tab?'block':'none';});
+  document.getElementById('mResult').classList.remove('on');
+}
+function computeCalculus(){currentTab==='integrate'?doIntegral():doDiff();}
+
+function doIntegral(){
+  const fn=document.getElementById('intFn').value.trim();
+  const aR=document.getElementById('intA').value.trim()||'0';
+  const bR=document.getElementById('intB').value.trim()||'1';
+  const n=parseInt(document.getElementById('intN').value);
+  const meth=document.getElementById('intMethod').value;
+  if(!fn)return showMRes('ERROR','Enter a function f(x)',true);
+  let a,b;
+  try{a=parseFloat(evaluate(aR.replace(/π/g,'(Math.PI)')));}catch{return showMRes('ERROR','Invalid lower bound',true);}
+  try{b=parseFloat(evaluate(bR.replace(/π/g,'(Math.PI)')));}catch{return showMRes('ERROR','Invalid upper bound',true);}
+  if(isNaN(a)||isNaN(b))return showMRes('ERROR','Bounds must be numbers',true);
+  try{
+    let r;
+    if(meth==='simpson'){let nn=n%2!==0?n+1:n;const h=(b-a)/nn;let s=evalFx(fn,a)+evalFx(fn,b);for(let i=1;i<nn;i++)s+=(i%2===0?2:4)*evalFx(fn,a+i*h);r=(h/3)*s;}
+    else if(meth==='trap'){const h=(b-a)/n;let s=(evalFx(fn,a)+evalFx(fn,b))/2;for(let i=1;i<n;i++)s+=evalFx(fn,a+i*h);r=h*s;}
+    else{
+      const nd=[-.9931285991850949,-.9639719272779138,-.9122344282513259,-.8391169718222188,-.7463062256567499,-.6360536807265150,-.5108670019508271,-.3737060887154195,-.2277858511416451,-.0765265211334973,.0765265211334973,.2277858511416451,.3737060887154195,.5108670019508271,.6360536807265150,.7463062256567499,.8391169718222188,.9122344282513259,.9639719272779138,.9931285991850949];
+      const wt=[.0176140071391521,.0406014298003869,.0626720483341091,.0832767415767048,.1019301198172404,.1181945319615184,.1316886384491766,.1420961093183820,.1491729864726037,.1527533871307258,.1527533871307258,.1491729864726037,.1420961093183820,.1316886384491766,.1181945319615184,.1019301198172404,.0832767415767048,.0626720483341091,.0406014298003869,.0176140071391521];
+      const mid=(a+b)/2,half=(b-a)/2;let s=0;for(let i=0;i<20;i++)s+=wt[i]*evalFx(fn,mid+half*nd[i]);r=half*s;
+    }
+    showMRes('∫ f(x)dx  from '+fmt(a)+' to '+fmt(b),fmt(r));
+    lastAns=r;expr=fmt(r);render();
+  }catch(err){showMRes('ERROR','Cannot evaluate: '+err.message,true);}
+}
+
+function doDiff(){
+  const fn=document.getElementById('diffFn').value.trim();
+  const xR=document.getElementById('diffX').value.trim();
+  const order=parseInt(document.getElementById('diffOrder').value);
+  const meth=document.getElementById('diffMethod').value;
+  if(!fn)return showMRes('ERROR','Enter a function f(x)',true);
+  let xVal;
+  try{xVal=parseFloat(evaluate(xR.replace(/π/g,'(Math.PI)').replace(/ℯ/g,'(Math.E)')));}catch{return showMRes('ERROR','Invalid x value',true);}
+  if(isNaN(xVal))return showMRes('ERROR','x must be a number',true);
+  try{
+    const h=1e-6;let r;
+    if(order===1){if(meth==='central')r=(evalFx(fn,xVal+h)-evalFx(fn,xVal-h))/(2*h);else if(meth==='forward')r=(evalFx(fn,xVal+h)-evalFx(fn,xVal))/h;else r=(evalFx(fn,xVal)-evalFx(fn,xVal-h))/h;}
+    else if(order===2){r=(evalFx(fn,xVal+h)-2*evalFx(fn,xVal)+evalFx(fn,xVal-h))/(h*h);}
+    else if(order===3){const h2=1e-4;r=(evalFx(fn,xVal+2*h2)-2*evalFx(fn,xVal+h2)+2*evalFx(fn,xVal-h2)-evalFx(fn,xVal-2*h2))/(2*h2**3);}
+    else{const h2=5e-4;r=(evalFx(fn,xVal+2*h2)-4*evalFx(fn,xVal+h2)+6*evalFx(fn,xVal)-4*evalFx(fn,xVal-h2)+evalFx(fn,xVal-2*h2))/h2**4;}
+    const ord=['','f\'(x)','f\'\'(x)','f\'\'\'(x)','f⁽⁴⁾(x)'][order];
+    showMRes(ord+' at x = '+fmt(xVal),fmt(r));
+    lastAns=r;expr=fmt(r);render();
+  }catch(err){showMRes('ERROR','Cannot evaluate: '+err.message,true);}
+}
+
+function showMRes(label,value,isErr=false){
+  document.getElementById('mResLabel').textContent=label.toUpperCase();
+  const vEl=document.getElementById('mResVal');vEl.textContent=value;vEl.className='mres-val'+(isErr?' err':'');
+  document.getElementById('mResult').classList.add('on');
+}
+
+document.addEventListener('keydown',ev=>{
+  if(document.getElementById('modalBg').classList.contains('on'))return;
+  const k=ev.key;
+  if(k>='0'&&k<='9'){inNum(k);return;}
+  if(k==='.'){inNum('.');return;}
+  if(k==='+'){inSym('+');return;}
+  if(k==='-'){inSym('−');return;}
+  if(k==='*'){inSym('×');return;}
+  if(k==='/'){ev.preventDefault();inSym('÷');return;}
+  if(k==='^'){inSym('^');return;}
+  if(k==='('){inSym('(');return;}
+  if(k===')'){inSym(')');return;}
+  if(k==='%'){inSym('%');return;}
+  if(k==='Enter'||k==='='){ev.preventDefault();calculate();return;}
+  if(k==='Backspace'){delLast();return;}
+  if(k==='Escape'||k==='Delete'){clearAll();return;}
+  if(!ev.ctrlKey&&!ev.altKey&&!ev.metaKey){
+    if(k==='p'){inSym('π');return;}
+    if(k==='e'){inSym('ℯ');return;}
+    if(k==='s'){inFn('sin(');return;}
+    if(k==='c'){inFn('cos(');return;}
+    if(k==='t'){inFn('tan(');return;}
+    if(k==='l'){inFn('log(');return;}
+    if(k==='n'){inFn('ln(');return;}
+    if(k==='r'){inFn('√(');return;}
+    if(k==='a'){insertAns();return;}
+    if(k==='h'){toggleHyp();return;}
+    if(k==='d'){cycleAngle();return;}
+    if(k==='i'){openModal('integrate');return;}
+    if(k==='x'){openModal('diff');return;}
+  }
+});
+document.getElementById('modalBg').addEventListener('click',ev=>{if(ev.target===document.getElementById('modalBg'))closeModal();});
+render();
+</script>
+</body>
+</html>

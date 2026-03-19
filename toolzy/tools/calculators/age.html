@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Age Calculator — Toolzy</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --bg:#07080f;--card:#111422;--card-h:#161929;
+  --border:#1c1f35;
+  --a1:#00e5ff;--a2:#ff3cac;--a3:#f5a623;--a4:#43e97b;--a5:#a78bfa;--a6:#ff6b35;
+  --text:#dde2ff;--muted:#4a5070;--muted2:#6a7090;
+  --fh:'Syne',sans-serif;--fb:'DM Sans',sans-serif;--r:16px;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--text);font-family:var(--fb);overflow-x:hidden;min-height:100vh;}
+body::before{content:'';position:fixed;inset:0;
+  background-image:linear-gradient(rgba(0,229,255,.025) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(0,229,255,.025) 1px,transparent 1px);
+  background-size:56px 56px;pointer-events:none;z-index:0;}
+.blob{position:fixed;border-radius:50%;filter:blur(130px);pointer-events:none;z-index:0;}
+.b1{width:700px;height:700px;background:#a78bfa;opacity:.07;top:-250px;left:-250px;animation:bd 16s ease-in-out infinite alternate;}
+.b2{width:600px;height:600px;background:#ff3cac;opacity:.07;bottom:-200px;right:-200px;animation:bd 20s ease-in-out infinite alternate-reverse;}
+.b3{width:400px;height:400px;background:#00e5ff;opacity:.05;top:40%;left:40%;animation:bd 12s ease-in-out infinite alternate;}
+@keyframes bd{from{transform:translate(0,0) scale(1);}to{transform:translate(50px,40px) scale(1.15);}}
+
+/* NAV */
+nav{position:sticky;top:0;z-index:200;display:flex;align-items:center;justify-content:space-between;
+  padding:0 40px;height:62px;background:rgba(7,8,15,.9);backdrop-filter:blur(20px);
+  border-bottom:1px solid var(--border);}
+.nav-logo{font-family:var(--fh);font-size:1.4rem;font-weight:800;letter-spacing:-1px;
+  background:linear-gradient(120deg,#00e5ff,#a78bfa 50%,#ff3cac);
+  -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;
+  text-decoration:none;}
+.nav-back{display:flex;align-items:center;gap:8px;color:var(--muted2);text-decoration:none;
+  font-size:.83rem;font-weight:500;transition:color .2s;border:1px solid var(--border);
+  padding:6px 14px;border-radius:100px;}
+.nav-back:hover{color:var(--text);border-color:var(--a5);}
+.nav-back svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;}
+
+/* HERO */
+.hero{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;
+  padding:52px 40px 32px;text-align:center;}
+.badge{display:inline-flex;align-items:center;gap:8px;background:#ffffff06;border:1px solid var(--border);
+  color:var(--muted2);font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;
+  padding:5px 14px;border-radius:100px;margin-bottom:20px;}
+.hero-title{font-family:var(--fh);font-size:clamp(2.4rem,6vw,4.2rem);font-weight:800;
+  letter-spacing:-2px;line-height:1.05;margin-bottom:10px;}
+.hero-title span{background:linear-gradient(135deg,#a78bfa,#ff3cac 60%,#f5a623);
+  -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;}
+.hero-sub{font-size:.95rem;color:var(--muted2);font-weight:300;line-height:1.6;}
+
+/* MAIN */
+main{position:relative;z-index:1;max-width:960px;margin:0 auto;
+  padding:0 24px 80px;display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start;}
+
+/* PANEL */
+.panel{background:var(--card);border:1px solid var(--border);border-radius:20px;padding:28px 26px;
+  animation:fadeUp .5s ease both;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(18px);}to{opacity:1;transform:translateY(0);}}
+.panel-title{font-family:var(--fh);font-size:.75rem;font-weight:700;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--muted2);margin-bottom:22px;}
+
+/* DATE INPUT SECTION */
+.date-section{margin-bottom:22px;}
+.date-label{font-size:.75rem;color:var(--muted2);letter-spacing:.05em;text-transform:uppercase;
+  margin-bottom:10px;display:block;}
+
+/* Date picker grid */
+.date-grid{display:grid;grid-template-columns:1fr 1fr 1.2fr;gap:8px;}
+.sel-wrap{position:relative;}
+.sel-wrap select,.sel-wrap input{
+  width:100%;padding:13px 12px;background:#0d0e1a;
+  border:1px solid var(--border);border-radius:10px;color:var(--text);
+  font-family:var(--fb);font-size:.9rem;font-weight:500;outline:none;
+  -webkit-appearance:none;appearance:none;cursor:pointer;
+  transition:border-color .22s,box-shadow .22s;}
+.sel-wrap select:focus,.sel-wrap input:focus{border-color:#a78bfa50;box-shadow:0 0 0 3px #a78bfa0d;}
+.sel-wrap input[type=number]::-webkit-inner-spin-button{display:none;}
+.sel-mini-label{font-size:.65rem;color:var(--muted2);margin-bottom:5px;text-transform:uppercase;letter-spacing:.05em;}
+
+/* TODAY btn */
+.today-row{display:flex;gap:8px;margin-top:8px;}
+.btn-today{flex:1;padding:10px;background:transparent;border:1px solid var(--border);
+  border-radius:10px;color:var(--muted2);font-family:var(--fb);font-size:.8rem;
+  cursor:pointer;transition:all .2s;text-align:center;}
+.btn-today:hover{border-color:var(--a5);color:var(--a5);background:#a78bfa0a;}
+.btn-today.active-today{border-color:var(--a5);color:var(--a5);background:#a78bfa12;}
+
+/* CALCULATE BTN */
+.btn-calc{width:100%;margin-top:6px;padding:14px;
+  background:linear-gradient(135deg,#a78bfa,#ff3cac);
+  border:none;border-radius:12px;color:#07080f;font-family:var(--fh);font-size:.95rem;
+  font-weight:700;cursor:pointer;letter-spacing:.02em;
+  transition:opacity .2s,transform .15s,box-shadow .2s;}
+.btn-calc:hover{opacity:.9;transform:translateY(-2px);box-shadow:0 12px 30px #a78bfa30;}
+.btn-calc:active{transform:translateY(0);}
+
+/* RESULT PANEL */
+.result-panel{animation-delay:.12s;}
+
+/* Empty */
+.empty-state{text-align:center;padding:48px 20px;color:var(--muted2);}
+.empty-icon{font-size:3rem;margin-bottom:14px;display:block;opacity:.35;}
+.empty-txt{font-size:.85rem;line-height:1.6;}
+
+/* Big age display */
+.age-hero{text-align:center;padding:20px 0 10px;}
+.age-number{font-family:var(--fh);font-size:7rem;font-weight:800;letter-spacing:-6px;line-height:1;
+  background:linear-gradient(135deg,#a78bfa,#ff3cac 60%,#f5a623);
+  -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;
+  animation:pop .4s cubic-bezier(.34,1.56,.64,1) both;}
+@keyframes pop{from{transform:scale(.7);opacity:0;}to{transform:scale(1);opacity:1;}}
+.age-unit{font-family:var(--fh);font-size:1.1rem;font-weight:700;color:var(--muted2);letter-spacing:.05em;margin-top:-4px;}
+.age-exact{font-size:.82rem;color:var(--muted2);margin-top:8px;line-height:1.7;}
+.age-exact strong{color:var(--text);font-weight:500;}
+
+/* Stats grid */
+.stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px;}
+.stat-box{background:#0d0e1a;border:1px solid var(--border);border-radius:12px;
+  padding:14px 12px;text-align:center;transition:border-color .2s;}
+.stat-box:hover{border-color:var(--a5);}
+.stat-label{font-size:.65rem;color:var(--muted2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;}
+.stat-val{font-family:var(--fh);font-size:1.3rem;font-weight:700;color:var(--text);}
+.stat-unit{font-size:.68rem;color:var(--muted2);font-family:var(--fb);display:block;margin-top:2px;}
+
+/* Next birthday box */
+.bday-box{background:linear-gradient(135deg,#a78bfa0a,#ff3cac0a);
+  border:1px solid #ff3cac22;border-radius:12px;padding:14px 16px;margin-top:14px;
+  display:flex;align-items:center;gap:14px;}
+.bday-icon{font-size:2rem;flex-shrink:0;}
+
+.bday-title{font-size:.68rem;color:var(--muted2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;}
+.bday-val{font-family:var(--fh);font-size:1rem;font-weight:700;color:var(--a2);}
+.bday-sub{font-size:.72rem;color:var(--muted2);margin-top:2px;}
+
+/* Progress bar — year progress */
+.progress-wrap{margin-top:14px;}
+.progress-label{display:flex;justify-content:space-between;font-size:.7rem;color:var(--muted2);margin-bottom:7px;}
+.progress-bar{height:8px;background:var(--border);border-radius:100px;overflow:hidden;}
+.progress-fill{height:100%;border-radius:100px;
+  background:linear-gradient(90deg,#a78bfa,#ff3cac);
+  transition:width .6s cubic-bezier(.34,1.56,.64,1);}
+
+/* Zodiac / fun row */
+.fun-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:10px;}
+.fun-box{background:#0d0e1a;border:1px solid var(--border);border-radius:12px;
+  padding:12px 10px;text-align:center;}
+.fun-icon{font-size:1.4rem;margin-bottom:5px;}
+.fun-label{font-size:.62rem;color:var(--muted2);text-transform:uppercase;letter-spacing:.05em;}
+.fun-val{font-family:var(--fh);font-size:.8rem;font-weight:700;margin-top:3px;color:var(--text);}
+
+/* Full width panels */
+.full{grid-column:1/-1;}
+
+/* Footer */
+footer{position:relative;z-index:1;border-top:1px solid var(--border);padding:24px 40px;
+  display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;}
+.foot-logo{font-family:var(--fh);font-size:1.1rem;font-weight:800;
+  background:linear-gradient(120deg,#00e5ff,#a78bfa);
+  -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;}
+.foot-txt{font-size:.78rem;color:var(--muted);}
+
+@media(max-width:700px){
+  nav{padding:0 16px;}
+  .hero{padding:36px 16px 24px;}
+  main{grid-template-columns:1fr;padding:0 14px 60px;}
+  .age-number{font-size:5rem;letter-spacing:-4px;}
+  footer{padding:20px 16px;}
+  .fun-row{grid-template-columns:1fr 1fr;}
+}
+</style>
+</head>
+<body>
+<div class="blob b1"></div><div class="blob b2"></div><div class="blob b3"></div>
+
+<nav>
+  <a class="nav-logo" href="index.html">Toolzy</a>
+  <a class="nav-back" href="index.html">
+    <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+    All Tools
+  </a>
+</nav>
+
+<section class="hero">
+  <div class="badge">🎂 Age Calculator</div>
+  <h1 class="hero-title">How Old <span>Are You?</span></h1>
+  <p class="hero-sub">Find your exact age in years, months, days, hours & more — instantly.</p>
+</section>
+
+<main>
+
+  <!-- INPUT PANEL -->
+  <div class="panel" style="animation-delay:.05s;">
+    <div class="panel-title">🎈 Enter Your Birthday</div>
+
+    <div class="date-section">
+      <span class="date-label">Date of Birth</span>
+      <div class="date-grid">
+        <div>
+          <div class="sel-mini-label">Day</div>
+          <div class="sel-wrap"><input type="number" id="dobDay" min="1" max="31" placeholder="DD" oninput="calculate()"/></div>
+        </div>
+        <div>
+          <div class="sel-mini-label">Month</div>
+          <div class="sel-wrap">
+            <select id="dobMonth" onchange="calculate()">
+              <option value="">Month</option>
+              <option value="1">January</option><option value="2">February</option>
+              <option value="3">March</option><option value="4">April</option>
+              <option value="5">May</option><option value="6">June</option>
+              <option value="7">July</option><option value="8">August</option>
+              <option value="9">September</option><option value="10">October</option>
+              <option value="11">November</option><option value="12">December</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <div class="sel-mini-label">Year</div>
+          <div class="sel-wrap"><input type="number" id="dobYear" min="1900" max="2025" placeholder="YYYY" oninput="calculate()"/></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="date-section">
+      <span class="date-label">Calculate Age As Of</span>
+      <div class="date-grid">
+        <div>
+          <div class="sel-mini-label">Day</div>
+          <div class="sel-wrap"><input type="number" id="toDay" min="1" max="31" oninput="calculate()"/></div>
+        </div>
+        <div>
+          <div class="sel-mini-label">Month</div>
+          <div class="sel-wrap">
+            <select id="toMonth" onchange="calculate()">
+              <option value="">Month</option>
+              <option value="1">January</option><option value="2">February</option>
+              <option value="3">March</option><option value="4">April</option>
+              <option value="5">May</option><option value="6">June</option>
+              <option value="7">July</option><option value="8">August</option>
+              <option value="9">September</option><option value="10">October</option>
+              <option value="11">November</option><option value="12">December</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <div class="sel-mini-label">Year</div>
+          <div class="sel-wrap"><input type="number" id="toYear" min="1900" max="2100" oninput="calculate()"/></div>
+        </div>
+      </div>
+      <div class="today-row">
+        <button class="btn-today" id="todayBtn" onclick="setToday()">📅 Set to Today</button>
+      </div>
+    </div>
+
+    <button class="btn-calc" onclick="calculate()">🎂 Calculate My Age</button>
+  </div>
+
+  <!-- RESULT PANEL -->
+  <div class="panel result-panel">
+    <div class="panel-title">✨ Your Age</div>
+
+    <div id="emptyState" class="empty-state">
+      <span class="empty-icon">🎂</span>
+      <div class="empty-txt">Enter your date of birth<br/>to see your exact age</div>
+    </div>
+
+    <div id="resultContent" style="display:none;">
+      <div class="age-hero">
+        <div class="age-number" id="ageYears">—</div>
+        <div class="age-unit">YEARS OLD</div>
+        <div class="age-exact" id="ageExact">—</div>
+      </div>
+
+      <div class="stats-grid">
+        <div class="stat-box">
+          <div class="stat-label">Total Months</div>
+          <div class="stat-val" id="statMonths">—</div>
+          <span class="stat-unit">months</span>
+        </div>
+        <div class="stat-box">
+          <div class="stat-label">Total Weeks</div>
+          <div class="stat-val" id="statWeeks">—</div>
+          <span class="stat-unit">weeks</span>
+        </div>
+        <div class="stat-box">
+          <div class="stat-label">Total Days</div>
+          <div class="stat-val" id="statDays">—</div>
+          <span class="stat-unit">days lived</span>
+        </div>
+        <div class="stat-box">
+          <div class="stat-label">Total Hours</div>
+          <div class="stat-val" id="statHours">—</div>
+          <span class="stat-unit">hours</span>
+        </div>
+      </div>
+
+      <div class="bday-box" id="bdayBox">
+        <div class="bday-icon">🎉</div>
+        <div class="bday-info">
+          <div class="bday-title">Next Birthday</div>
+          <div class="bday-val" id="bdayVal">—</div>
+          <div class="bday-sub" id="bdaySub">—</div>
+        </div>
+      </div>
+
+      <div class="progress-wrap">
+        <div class="progress-label">
+          <span>Year Progress</span>
+          <span id="yearPct">0%</span>
+        </div>
+        <div class="progress-bar">
+          <div class="progress-fill" id="yearBar" style="width:0%"></div>
+        </div>
+      </div>
+
+      <div class="fun-row" style="margin-top:14px;">
+        <div class="fun-box">
+          <div class="fun-icon">♈</div>
+          <div class="fun-label">Zodiac</div>
+          <div class="fun-val" id="zodiacSign">—</div>
+        </div>
+        <div class="fun-box">
+          <div class="fun-icon">🐉</div>
+          <div class="fun-label">Chinese</div>
+          <div class="fun-val" id="chineseSign">—</div>
+        </div>
+        <div class="fun-box">
+          <div class="fun-icon">📅</div>
+          <div class="fun-label">Day Born</div>
+          <div class="fun-val" id="dayBorn">—</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<footer>
+  <div class="foot-logo">Toolzy</div>
+  <div class="foot-txt">© 2025 Toolzy · Free tools for everyone · Built with ❤️</div>
+  <div class="foot-txt">53 tools · 10 games · Always free</div>
+</footer>
+
+<script>
+// ── Set today's date on load ───────────────────────────────────
+function setToday(){
+  const t = new Date();
+  document.getElementById('toDay').value   = t.getDate();
+  document.getElementById('toMonth').value = t.getMonth()+1;
+  document.getElementById('toYear').value  = t.getFullYear();
+  document.getElementById('todayBtn').classList.add('active-today');
+  calculate();
+}
+
+// ── Zodiac ────────────────────────────────────────────────────
+function getZodiac(m, d){
+  const z = [
+    [1,20,'Capricorn','♑'],[2,19,'Aquarius','♒'],[3,21,'Pisces','♓'],
+    [4,20,'Aries','♈'],[5,21,'Taurus','♉'],[6,21,'Gemini','♊'],
+    [7,23,'Cancer','♋'],[8,23,'Leo','♌'],[9,23,'Virgo','♍'],
+    [10,23,'Libra','♎'],[11,22,'Scorpio','♏'],[12,22,'Sagittarius','♐'],
+    [12,32,'Capricorn','♑']
+  ];
+  for(const [zm,zd,name,icon] of z){
+    if(m < zm || (m===zm && d < zd)) return {name, icon};
+  }
+  return {name:'Capricorn', icon:'♑'};
+}
+
+// ── Chinese zodiac ────────────────────────────────────────────
+function getChinese(year){
+  const animals = ['Rat🐀','Ox🐂','Tiger🐯','Rabbit🐰','Dragon🐉','Snake🐍',
+                   'Horse🐴','Goat🐐','Monkey🐒','Rooster🐓','Dog🐕','Pig🐷'];
+  return animals[((year - 1900) % 12 + 12) % 12];
+}
+
+// ── Day of week ───────────────────────────────────────────────
+const DAYS = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+
+// ── Format large numbers ──────────────────────────────────────
+function fmt(n){ return n.toLocaleString('en-IN'); }
+
+// ── Main calculate ────────────────────────────────────────────
+function calculate(){
+  const dobD = parseInt(document.getElementById('dobDay').value);
+  const dobM = parseInt(document.getElementById('dobMonth').value);
+  const dobY = parseInt(document.getElementById('dobYear').value);
+  const toD  = parseInt(document.getElementById('toDay').value);
+  const toM  = parseInt(document.getElementById('toMonth').value);
+  const toY  = parseInt(document.getElementById('toYear').value);
+
+  if(!dobD||!dobM||!dobY||!toD||!toM||!toY) return;
+  if(dobY < 1900 || dobY > 2099) return;
+
+  const dob = new Date(dobY, dobM-1, dobD);
+  const to  = new Date(toY,  toM-1,  toD);
+
+  if(dob > to){ return; }
+
+  // Exact age in years, months, days
+  let years  = toY - dobY;
+  let months = toM - dobM;
+  let days   = toD - dobD;
+
+  if(days < 0){
+    months--;
+    const prevMonth = new Date(toY, toM-1, 0);
+    days += prevMonth.getDate();
+  }
+  if(months < 0){ years--; months += 12; }
+
+  // Total counts
+  const totalDays   = Math.floor((to - dob) / 86400000);
+  const totalWeeks  = Math.floor(totalDays / 7);
+  const totalMonths = years*12 + months;
+  const totalHours  = totalDays * 24;
+
+  // Show result
+  document.getElementById('emptyState').style.display = 'none';
+  document.getElementById('resultContent').style.display = 'block';
+
+  // Animate years counter
+  animateCount('ageYears', years);
+
+  document.getElementById('ageExact').innerHTML =
+    `<strong>${years}</strong> yrs, <strong>${months}</strong> mos, <strong>${days}</strong> days`;
+
+  document.getElementById('statMonths').textContent = fmt(totalMonths);
+  document.getElementById('statWeeks').textContent  = fmt(totalWeeks);
+  document.getElementById('statDays').textContent   = fmt(totalDays);
+  document.getElementById('statHours').textContent  = fmt(totalHours);
+
+  // Next birthday
+  let nextBday = new Date(toY, dobM-1, dobD);
+  if(nextBday <= to) nextBday = new Date(toY+1, dobM-1, dobD);
+  const daysUntil = Math.ceil((nextBday - to) / 86400000);
+  const isBday = dob.getDate()===to.getDate() && dob.getMonth()===to.getMonth();
+  document.getElementById('bdayVal').textContent =
+    isBday ? '🎉 Happy Birthday Today!' :
+    `${nextBday.toLocaleDateString('en-IN',{day:'numeric',month:'long',year:'numeric'})}`;
+  document.getElementById('bdaySub').textContent =
+    isBday ? `You are turning ${years}!` :
+    `${daysUntil} day${daysUntil===1?'':'s'} away`;
+
+  // Year progress (days into current year)
+  const startOfYear = new Date(toY, 0, 1);
+  const endOfYear   = new Date(toY+1, 0, 1);
+  const pct = ((to - startOfYear)/(endOfYear - startOfYear)*100).toFixed(1);
+  document.getElementById('yearPct').textContent = pct+'%';
+  document.getElementById('yearBar').style.width = pct+'%';
+
+  // Zodiac
+  const z = getZodiac(dobM, dobD);
+  document.getElementById('zodiacSign').textContent = z.icon+' '+z.name;
+
+  // Chinese zodiac
+  document.getElementById('chineseSign').textContent = getChinese(dobY);
+
+  // Day of week born
+  document.getElementById('dayBorn').textContent = DAYS[dob.getDay()];
+}
+
+// ── Animated counter ──────────────────────────────────────────
+function animateCount(id, target){
+  const el = document.getElementById(id);
+  let start = 0;
+  const dur = 600;
+  const step = 16;
+  const inc = target / (dur/step);
+  const timer = setInterval(()=>{
+    start += inc;
+    if(start >= target){ el.textContent = target; clearInterval(timer); return; }
+    el.textContent = Math.floor(start);
+  }, step);
+}
+
+// Init
+setToday();
+
+// Pre-fill a demo DOB for instant visual
+document.getElementById('dobDay').value   = 15;
+document.getElementById('dobMonth').value = 6;
+document.getElementById('dobYear').value  = 1995;
+calculate();
+</script>
+</body>
+</html>

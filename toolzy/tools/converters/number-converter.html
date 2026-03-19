@@ -1,0 +1,737 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Number Converter — Toolzy</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --bg:#07080f;--card:#111422;--card-h:#161929;
+  --border:#1c1f35;
+  --a1:#00e5ff;--a2:#ff3cac;--a3:#f5a623;--a4:#43e97b;--a5:#a78bfa;--a6:#ff6b35;
+  --text:#dde2ff;--muted:#4a5070;--muted2:#6a7090;
+  --fh:'Syne',sans-serif;--fb:'DM Sans',sans-serif;--r:16px;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--text);font-family:var(--fb);overflow-x:hidden;min-height:100vh;}
+body::before{content:'';position:fixed;inset:0;
+  background-image:linear-gradient(rgba(0,229,255,.025) 1px,transparent 1px),
+  linear-gradient(90deg,rgba(0,229,255,.025) 1px,transparent 1px);
+  background-size:56px 56px;pointer-events:none;z-index:0;}
+.blob{position:fixed;border-radius:50%;filter:blur(130px);pointer-events:none;z-index:0;}
+.b1{width:700px;height:700px;background:#a78bfa;opacity:.07;top:-250px;left:-250px;animation:bd 16s ease-in-out infinite alternate;}
+.b2{width:600px;height:600px;background:#00e5ff;opacity:.06;bottom:-200px;right:-200px;animation:bd 20s ease-in-out infinite alternate-reverse;}
+.b3{width:400px;height:400px;background:#ff3cac;opacity:.04;top:40%;left:40%;animation:bd 12s ease-in-out infinite alternate;}
+@keyframes bd{from{transform:translate(0,0) scale(1);}to{transform:translate(50px,40px) scale(1.15);}}
+
+/* NAV */
+nav{position:sticky;top:0;z-index:200;display:flex;align-items:center;justify-content:space-between;
+  padding:0 40px;height:62px;background:rgba(7,8,15,.9);backdrop-filter:blur(20px);
+  border-bottom:1px solid var(--border);}
+.nav-logo{font-family:var(--fh);font-size:1.4rem;font-weight:800;letter-spacing:-1px;
+  background:linear-gradient(120deg,#00e5ff,#a78bfa 50%,#ff3cac);
+  -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;
+  text-decoration:none;}
+.nav-back{display:flex;align-items:center;gap:8px;color:var(--muted2);text-decoration:none;
+  font-size:.83rem;font-weight:500;transition:color .2s;border:1px solid var(--border);
+  padding:6px 14px;border-radius:100px;}
+.nav-back:hover{color:var(--text);border-color:var(--a5);}
+.nav-back svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;}
+
+/* HERO */
+.hero{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;
+  padding:52px 40px 32px;text-align:center;}
+.badge{display:inline-flex;align-items:center;gap:8px;background:#ffffff06;border:1px solid var(--border);
+  color:var(--muted2);font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;
+  padding:5px 14px;border-radius:100px;margin-bottom:20px;}
+.hero-title{font-family:var(--fh);font-size:clamp(2.2rem,5vw,3.8rem);font-weight:800;
+  letter-spacing:-2px;line-height:1.05;margin-bottom:10px;}
+.hero-title span{background:linear-gradient(135deg,#a78bfa,#00e5ff 60%,#43e97b);
+  -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;}
+.hero-sub{font-size:.95rem;color:var(--muted2);font-weight:300;line-height:1.6;}
+
+/* TAB BAR */
+.tab-bar{position:relative;z-index:1;display:flex;flex-wrap:wrap;gap:8px;
+  justify-content:center;padding:0 32px 32px;}
+.tab-btn{padding:8px 18px;border-radius:100px;border:1px solid var(--border);background:transparent;
+  color:var(--muted2);font-family:var(--fb);font-size:.82rem;font-weight:500;cursor:pointer;
+  transition:all .2s;white-space:nowrap;}
+.tab-btn:hover{border-color:var(--a5);color:var(--a5);background:#a78bfa0d;}
+.tab-btn.active{border-color:var(--a5);color:var(--a5);background:#a78bfa15;}
+
+/* MAIN */
+main{position:relative;z-index:1;max-width:860px;margin:0 auto;padding:0 24px 80px;}
+
+/* CONVERTER PANELS */
+.conv-panel{display:none;animation:fadeUp .4s ease both;}
+.conv-panel.active{display:block;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:translateY(0);}}
+
+/* PANEL CARD */
+.panel{background:var(--card);border:1px solid var(--border);border-radius:20px;padding:28px 26px;
+  margin-bottom:16px;}
+.panel-title{font-family:var(--fh);font-size:.75rem;font-weight:700;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--muted2);margin-bottom:22px;
+  display:flex;align-items:center;gap:8px;}
+.panel-title span{font-size:1rem;}
+
+/* IO ROW */
+.io-wrap{display:grid;grid-template-columns:1fr auto 1fr;gap:12px;align-items:center;margin-bottom:14px;}
+.io-box{display:flex;flex-direction:column;gap:7px;}
+.io-label{font-size:.7rem;color:var(--muted2);text-transform:uppercase;letter-spacing:.07em;}
+.io-input{width:100%;padding:14px 16px;background:#0d0e1a;border:1px solid var(--border);
+  border-radius:12px;color:var(--text);font-family:'Courier New',monospace;font-size:1rem;
+  font-weight:600;outline:none;transition:border-color .22s,box-shadow .22s;letter-spacing:.04em;}
+.io-input:focus{border-color:#a78bfa50;box-shadow:0 0 0 3px #a78bfa0d;}
+.io-input.output{color:var(--a5);border-color:#a78bfa20;background:#0a0b16;cursor:default;}
+.io-input.error{color:var(--a2);border-color:#ff3cac40;}
+
+/* SWAP BTN */
+.swap-btn{width:40px;height:40px;border-radius:50%;background:#0d0e1a;border:1px solid var(--border);
+  color:var(--muted2);cursor:pointer;font-size:1rem;display:flex;align-items:center;
+  justify-content:center;transition:all .2s;flex-shrink:0;margin-top:20px;}
+.swap-btn:hover{border-color:var(--a5);color:var(--a5);background:#a78bfa12;transform:rotate(180deg);}
+
+/* COPY BTN */
+.copy-btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:100px;
+  border:1px solid var(--border);background:transparent;color:var(--muted2);
+  font-family:var(--fb);font-size:.75rem;cursor:pointer;transition:all .2s;}
+.copy-btn:hover{border-color:var(--a5);color:var(--a5);}
+.copy-btn.copied{border-color:var(--a4);color:var(--a4);}
+
+/* ALL AT ONCE — display grid showing all bases */
+.all-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px;margin-top:16px;}
+.base-box{background:#0d0e1a;border:1px solid var(--border);border-radius:12px;padding:14px;
+  cursor:pointer;transition:border-color .2s;}
+.base-box:hover{border-color:var(--a5);}
+.base-label{font-size:.65rem;color:var(--muted2);text-transform:uppercase;letter-spacing:.07em;margin-bottom:7px;}
+.base-val{font-family:'Courier New',monospace;font-size:.95rem;font-weight:700;color:var(--a5);
+  word-break:break-all;line-height:1.4;}
+.base-val.empty{color:var(--muted);}
+
+/* ROMAN specific */
+.roman-display{text-align:center;padding:24px 16px;background:#0d0e1a;border:1px solid var(--border);
+  border-radius:14px;margin-top:14px;}
+.roman-big{font-family:var(--fh);font-size:3rem;font-weight:800;letter-spacing:4px;
+  background:linear-gradient(135deg,#a78bfa,#00e5ff);
+  -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;}
+.roman-num{font-family:var(--fh);font-size:1.2rem;color:var(--muted2);margin-top:6px;}
+
+/* BASE CONVERTER specific */
+.base-selector{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;}
+.base-pill{padding:5px 13px;border-radius:100px;border:1px solid var(--border);background:transparent;
+  color:var(--muted2);font-family:var(--fb);font-size:.78rem;cursor:pointer;transition:all .2s;}
+.base-pill:hover{border-color:var(--a1);color:var(--a1);}
+.base-pill.active{border-color:var(--a1);color:var(--a1);background:#00e5ff12;}
+.base-inp-wrap{display:flex;align-items:center;gap:10px;margin-bottom:12px;}
+.base-inp-label{font-size:.8rem;color:var(--muted2);width:80px;flex-shrink:0;}
+.base-inp{flex:1;padding:11px 14px;background:#0d0e1a;border:1px solid var(--border);
+  border-radius:10px;color:var(--text);font-family:'Courier New',monospace;font-size:.9rem;
+  font-weight:600;outline:none;transition:border-color .22s;}
+.base-inp:focus{border-color:#00e5ff40;}
+.base-inp.highlight{border-color:#00e5ff50;color:var(--a1);}
+
+/* HISTORY */
+.history-strip{display:flex;flex-wrap:wrap;gap:7px;margin-top:14px;}
+.hist-pill{padding:4px 12px;border-radius:100px;background:#a78bfa12;border:1px solid #a78bfa25;
+  color:var(--a5);font-size:.72rem;font-family:'Courier New',monospace;cursor:pointer;transition:all .2s;}
+.hist-pill:hover{background:#a78bfa22;}
+
+/* REFERENCE TABLE */
+.ref-toggle{display:flex;align-items:center;gap:8px;font-size:.75rem;color:var(--muted2);
+  cursor:pointer;margin-top:16px;user-select:none;width:fit-content;}
+.ref-toggle:hover{color:var(--text);}
+.ref-body{display:none;margin-top:12px;overflow-x:auto;}
+.ref-body.open{display:block;}
+table.ref{width:100%;border-collapse:collapse;font-size:.72rem;}
+table.ref th{background:#0d0e1a;padding:8px 10px;text-align:center;color:var(--muted2);
+  font-weight:600;letter-spacing:.04em;border-bottom:1px solid var(--border);}
+table.ref td{padding:7px 10px;text-align:center;border-top:1px solid #1c1f3540;
+  font-family:'Courier New',monospace;font-size:.78rem;}
+table.ref tr:hover td{background:#ffffff03;}
+
+footer{position:relative;z-index:1;border-top:1px solid var(--border);padding:24px 40px;
+  display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;}
+.foot-logo{font-family:var(--fh);font-size:1.1rem;font-weight:800;
+  background:linear-gradient(120deg,#00e5ff,#a78bfa);
+  -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;}
+.foot-txt{font-size:.78rem;color:var(--muted);}
+
+@media(max-width:640px){
+  nav{padding:0 16px;}
+  .hero{padding:36px 16px 24px;}
+  .tab-bar{padding:0 12px 24px;}
+  main{padding:0 12px 60px;}
+  .io-wrap{grid-template-columns:1fr;gap:8px;}
+  .swap-btn{margin:0 auto;transform:rotate(90deg);}
+  .swap-btn:hover{transform:rotate(270deg);}
+  footer{padding:20px 16px;}
+}
+</style>
+</head>
+<body>
+<div class="blob b1"></div><div class="blob b2"></div><div class="blob b3"></div>
+
+<nav>
+  <a class="nav-logo" href="index.html">Toolzy</a>
+  <a class="nav-back" href="index.html">
+    <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+    All Tools
+  </a>
+</nav>
+
+<section class="hero">
+  <div class="badge">🔢 Number Converters</div>
+  <h1 class="hero-title">All-in-One <span>Number Converter</span></h1>
+  <p class="hero-sub">Binary, Decimal, Hex, Octal, Roman, Base 2–36 — all in one place.</p>
+</section>
+
+<div class="tab-bar">
+  <button class="tab-btn active" onclick="switchTab('all',this)">⚡ All Bases</button>
+  <button class="tab-btn" onclick="switchTab('bindec',this)">🔢 Binary ↔ Decimal</button>
+  <button class="tab-btn" onclick="switchTab('binhex',this)">🔣 Binary ↔ Hex</button>
+  <button class="tab-btn" onclick="switchTab('binoct',this)">8️⃣ Binary ↔ Octal</button>
+  <button class="tab-btn" onclick="switchTab('dechex',this)">🔟 Decimal ↔ Hex</button>
+  <button class="tab-btn" onclick="switchTab('roman',this)">🏛️ Roman Numerals</button>
+  <button class="tab-btn" onclick="switchTab('base',this)">🔀 Base Converter</button>
+</div>
+
+<main>
+
+<!-- ═══════════════ ALL BASES ═══════════════ -->
+<div class="conv-panel active" id="panel-all">
+  <div class="panel">
+    <div class="panel-title"><span>⚡</span> Enter Any Number — See All Bases</div>
+    <div class="io-wrap" style="grid-template-columns:1fr auto;">
+      <div class="io-box">
+        <div class="io-label">Input (any base)</div>
+        <input class="io-input" id="all-input" placeholder="e.g. 255 or 0xFF or 11111111"
+          oninput="convertAll(this.value)"/>
+      </div>
+      <div style="margin-top:20px;">
+        <select id="all-base-sel" onchange="convertAll(document.getElementById('all-input').value)"
+          style="padding:14px 12px;background:#0d0e1a;border:1px solid var(--border);border-radius:12px;
+          color:var(--text);font-family:var(--fb);font-size:.85rem;outline:none;cursor:pointer;">
+          <option value="10">Base 10 (Dec)</option>
+          <option value="2">Base 2 (Bin)</option>
+          <option value="16">Base 16 (Hex)</option>
+          <option value="8">Base 8 (Oct)</option>
+        </select>
+      </div>
+    </div>
+    <div class="all-grid">
+      <div class="base-box" onclick="copyBase('all-bin')">
+        <div class="base-label">Binary (Base 2)</div>
+        <div class="base-val empty" id="all-bin">—</div>
+      </div>
+      <div class="base-box" onclick="copyBase('all-oct')">
+        <div class="base-label">Octal (Base 8)</div>
+        <div class="base-val empty" id="all-oct">—</div>
+      </div>
+      <div class="base-box" onclick="copyBase('all-dec')">
+        <div class="base-label">Decimal (Base 10)</div>
+        <div class="base-val empty" id="all-dec">—</div>
+      </div>
+      <div class="base-box" onclick="copyBase('all-hex')">
+        <div class="base-label">Hexadecimal (Base 16)</div>
+        <div class="base-val empty" id="all-hex">—</div>
+      </div>
+      <div class="base-box" onclick="copyBase('all-b32')">
+        <div class="base-label">Base 32</div>
+        <div class="base-val empty" id="all-b32">—</div>
+      </div>
+      <div class="base-box" onclick="copyBase('all-b36')">
+        <div class="base-label">Base 36</div>
+        <div class="base-val empty" id="all-b36">—</div>
+      </div>
+    </div>
+    <p style="font-size:.68rem;color:var(--muted);margin-top:12px;">💡 Click any result box to copy it.</p>
+  </div>
+</div>
+
+<!-- ═══════════════ BINARY ↔ DECIMAL ═══════════════ -->
+<div class="conv-panel" id="panel-bindec">
+  <div class="panel">
+    <div class="panel-title"><span>🔢</span> Binary ↔ Decimal</div>
+    <div class="io-wrap">
+      <div class="io-box">
+        <div class="io-label">Binary</div>
+        <input class="io-input" id="bd-bin" placeholder="e.g. 11001010" oninput="bdFromBin(this.value)"/>
+      </div>
+      <button class="swap-btn" onclick="bdSwap()">⇄</button>
+      <div class="io-box">
+        <div class="io-label">Decimal</div>
+        <input class="io-input" id="bd-dec" placeholder="e.g. 202" oninput="bdFromDec(this.value)"/>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;">
+      <button class="copy-btn" onclick="copyText('bd-bin',this)">📋 Copy Binary</button>
+      <button class="copy-btn" onclick="copyText('bd-dec',this)">📋 Copy Decimal</button>
+    </div>
+    <div class="ref-toggle" onclick="toggleRef('bd-ref')">▶ Show reference table (0–15)</div>
+    <div class="ref-body" id="bd-ref">
+      <table class="ref"><thead><tr><th>Dec</th><th>Binary</th><th>Dec</th><th>Binary</th></tr></thead>
+      <tbody id="bd-ref-body"></tbody></table>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════ BINARY ↔ HEX ═══════════════ -->
+<div class="conv-panel" id="panel-binhex">
+  <div class="panel">
+    <div class="panel-title"><span>🔣</span> Binary ↔ Hexadecimal</div>
+    <div class="io-wrap">
+      <div class="io-box">
+        <div class="io-label">Binary</div>
+        <input class="io-input" id="bh-bin" placeholder="e.g. 11111111" oninput="bhFromBin(this.value)"/>
+      </div>
+      <button class="swap-btn" onclick="bhSwap()">⇄</button>
+      <div class="io-box">
+        <div class="io-label">Hexadecimal</div>
+        <input class="io-input" id="bh-hex" placeholder="e.g. FF" oninput="bhFromHex(this.value)" style="text-transform:uppercase;"/>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;">
+      <button class="copy-btn" onclick="copyText('bh-bin',this)">📋 Copy Binary</button>
+      <button class="copy-btn" onclick="copyText('bh-hex',this)">📋 Copy Hex</button>
+    </div>
+    <div class="ref-toggle" onclick="toggleRef('bh-ref')">▶ Show reference table (0–F)</div>
+    <div class="ref-body" id="bh-ref">
+      <table class="ref"><thead><tr><th>Hex</th><th>Binary</th><th>Decimal</th></tr></thead>
+      <tbody id="bh-ref-body"></tbody></table>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════ BINARY ↔ OCTAL ═══════════════ -->
+<div class="conv-panel" id="panel-binoct">
+  <div class="panel">
+    <div class="panel-title"><span>8️⃣</span> Binary ↔ Octal</div>
+    <div class="io-wrap">
+      <div class="io-box">
+        <div class="io-label">Binary</div>
+        <input class="io-input" id="bo-bin" placeholder="e.g. 11010111" oninput="boFromBin(this.value)"/>
+      </div>
+      <button class="swap-btn" onclick="boSwap()">⇄</button>
+      <div class="io-box">
+        <div class="io-label">Octal</div>
+        <input class="io-input" id="bo-oct" placeholder="e.g. 327" oninput="boFromOct(this.value)"/>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;">
+      <button class="copy-btn" onclick="copyText('bo-bin',this)">📋 Copy Binary</button>
+      <button class="copy-btn" onclick="copyText('bo-oct',this)">📋 Copy Octal</button>
+    </div>
+    <div class="ref-toggle" onclick="toggleRef('bo-ref')">▶ Show reference table (0–7)</div>
+    <div class="ref-body" id="bo-ref">
+      <table class="ref"><thead><tr><th>Octal</th><th>Binary</th><th>Decimal</th></tr></thead>
+      <tbody id="bo-ref-body"></tbody></table>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════ DECIMAL ↔ HEX ═══════════════ -->
+<div class="conv-panel" id="panel-dechex">
+  <div class="panel">
+    <div class="panel-title"><span>🔟</span> Decimal ↔ Hexadecimal</div>
+    <div class="io-wrap">
+      <div class="io-box">
+        <div class="io-label">Decimal</div>
+        <input class="io-input" id="dh-dec" placeholder="e.g. 255" oninput="dhFromDec(this.value)"/>
+      </div>
+      <button class="swap-btn" onclick="dhSwap()">⇄</button>
+      <div class="io-box">
+        <div class="io-label">Hexadecimal</div>
+        <input class="io-input" id="dh-hex" placeholder="e.g. FF" oninput="dhFromHex(this.value)" style="text-transform:uppercase;"/>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;">
+      <button class="copy-btn" onclick="copyText('dh-dec',this)">📋 Copy Decimal</button>
+      <button class="copy-btn" onclick="copyText('dh-hex',this)">📋 Copy Hex</button>
+    </div>
+    <div class="ref-toggle" onclick="toggleRef('dh-ref')">▶ Show reference table (0–255)</div>
+    <div class="ref-body" id="dh-ref">
+      <table class="ref"><thead><tr><th>Dec</th><th>Hex</th><th>Dec</th><th>Hex</th><th>Dec</th><th>Hex</th></tr></thead>
+      <tbody id="dh-ref-body"></tbody></table>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════ ROMAN NUMERALS ═══════════════ -->
+<div class="conv-panel" id="panel-roman">
+  <div class="panel">
+    <div class="panel-title"><span>🏛️</span> Roman Numerals</div>
+    <div class="io-wrap">
+      <div class="io-box">
+        <div class="io-label">Arabic (Decimal)</div>
+        <input class="io-input" id="rm-dec" placeholder="e.g. 2025" type="number" min="1" max="3999" oninput="rmFromDec(this.value)"/>
+      </div>
+      <button class="swap-btn" onclick="rmSwap()">⇄</button>
+      <div class="io-box">
+        <div class="io-label">Roman Numeral</div>
+        <input class="io-input" id="rm-rom" placeholder="e.g. MMXXV" oninput="rmFromRom(this.value)" style="text-transform:uppercase;letter-spacing:3px;"/>
+      </div>
+    </div>
+    <div id="roman-display" class="roman-display" style="display:none;">
+      <div class="roman-big" id="roman-big-text">—</div>
+      <div class="roman-num" id="roman-num-text">—</div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:14px;">
+      <button class="copy-btn" onclick="copyText('rm-dec',this)">📋 Copy Arabic</button>
+      <button class="copy-btn" onclick="copyText('rm-rom',this)">📋 Copy Roman</button>
+    </div>
+    <div style="margin-top:18px;background:#0d0e1a;border:1px solid var(--border);border-radius:12px;padding:14px 16px;">
+      <div style="font-size:.7rem;color:var(--muted2);text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px;">Roman Numeral Symbols</div>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;">
+        <span style="font-family:'Courier New',monospace;font-size:.82rem;color:var(--a5);background:#a78bfa12;padding:4px 10px;border-radius:6px;">I = 1</span>
+        <span style="font-family:'Courier New',monospace;font-size:.82rem;color:var(--a5);background:#a78bfa12;padding:4px 10px;border-radius:6px;">V = 5</span>
+        <span style="font-family:'Courier New',monospace;font-size:.82rem;color:var(--a5);background:#a78bfa12;padding:4px 10px;border-radius:6px;">X = 10</span>
+        <span style="font-family:'Courier New',monospace;font-size:.82rem;color:var(--a5);background:#a78bfa12;padding:4px 10px;border-radius:6px;">L = 50</span>
+        <span style="font-family:'Courier New',monospace;font-size:.82rem;color:var(--a5);background:#a78bfa12;padding:4px 10px;border-radius:6px;">C = 100</span>
+        <span style="font-family:'Courier New',monospace;font-size:.82rem;color:var(--a5);background:#a78bfa12;padding:4px 10px;border-radius:6px;">D = 500</span>
+        <span style="font-family:'Courier New',monospace;font-size:.82rem;color:var(--a5);background:#a78bfa12;padding:4px 10px;border-radius:6px;">M = 1000</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════ BASE CONVERTER ═══════════════ -->
+<div class="conv-panel" id="panel-base">
+  <div class="panel">
+    <div class="panel-title"><span>🔀</span> Base Converter (Base 2 – 36)</div>
+    <div style="margin-bottom:14px;">
+      <div style="font-size:.72rem;color:var(--muted2);margin-bottom:8px;text-transform:uppercase;letter-spacing:.06em;">Input Base</div>
+      <div class="base-selector" id="base-from-sel">
+        <button class="base-pill" onclick="setFromBase(2,this)">2</button>
+        <button class="base-pill active" onclick="setFromBase(10,this)">10</button>
+        <button class="base-pill" onclick="setFromBase(16,this)">16</button>
+        <button class="base-pill" onclick="setFromBase(8,this)">8</button>
+        <button class="base-pill" onclick="setFromBase(32,this)">32</button>
+        <button class="base-pill" onclick="setFromBase(36,this)">36</button>
+        <input type="number" id="custom-from" min="2" max="36" placeholder="Custom"
+          oninput="setFromBase(+this.value,null)"
+          style="width:80px;padding:5px 10px;background:#0d0e1a;border:1px solid var(--border);
+          border-radius:100px;color:var(--text);font-family:var(--fb);font-size:.78rem;outline:none;"/>
+      </div>
+    </div>
+    <div class="io-box" style="margin-bottom:18px;">
+      <div class="io-label">Input Number (Base <span id="from-base-label">10</span>)</div>
+      <input class="io-input" id="bc-input" placeholder="Enter number…" oninput="convertBase()"/>
+    </div>
+    <div style="font-size:.72rem;color:var(--muted2);margin-bottom:8px;text-transform:uppercase;letter-spacing:.06em;">Output Bases</div>
+    <div id="bc-outputs"></div>
+  </div>
+</div>
+
+</main>
+
+<footer>
+  <div class="foot-logo">Toolzy</div>
+  <div class="foot-txt">© 2025 Toolzy · Free tools for everyone · Built with ❤️</div>
+  <div class="foot-txt">53 tools · 10 games · Always free</div>
+</footer>
+
+<script>
+// ═══════════════════════════════════════════════════
+// TAB SWITCHING
+// ═══════════════════════════════════════════════════
+function switchTab(id, btn){
+  document.querySelectorAll('.conv-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('panel-'+id).classList.add('active');
+  btn.classList.add('active');
+}
+
+// ═══════════════════════════════════════════════════
+// UTILITIES
+// ═══════════════════════════════════════════════════
+function isValidBin(s){ return /^[01]+$/.test(s); }
+function isValidHex(s){ return /^[0-9a-fA-F]+$/.test(s); }
+function isValidOct(s){ return /^[0-7]+$/.test(s); }
+function isValidDec(s){ return /^\d+$/.test(s); }
+
+function setErr(id, yes){
+  document.getElementById(id).classList.toggle('error', yes);
+}
+
+async function copyText(id, btn){
+  const val = document.getElementById(id).value;
+  if(!val) return;
+  await navigator.clipboard.writeText(val).catch(()=>{});
+  btn.classList.add('copied');
+  btn.textContent = '✅ Copied!';
+  setTimeout(()=>{ btn.classList.remove('copied'); btn.textContent = btn.textContent.replace('✅ Copied!','📋 Copy '+btn.textContent.split('Copy ')[1]||''); btn.textContent = '📋 '+btn.textContent.replace('📋 ',''); }, 1500);
+}
+function copyBase(id){
+  const val = document.getElementById(id).textContent;
+  if(!val || val==='—') return;
+  navigator.clipboard.writeText(val).catch(()=>{});
+  const el = document.getElementById(id);
+  const orig = el.textContent;
+  el.textContent = '✅ Copied!';
+  setTimeout(()=>{ el.textContent = orig; }, 1200);
+}
+
+function toggleRef(id){
+  const el = document.getElementById(id);
+  const tog = el.previousElementSibling;
+  el.classList.toggle('open');
+  tog.textContent = tog.textContent.replace(/[▶▼]/,el.classList.contains('open')?'▼':'▶');
+}
+
+// ═══════════════════════════════════════════════════
+// ALL BASES
+// ═══════════════════════════════════════════════════
+function convertAll(val){
+  val = val.trim();
+  const fromBase = parseInt(document.getElementById('all-base-sel').value);
+  const ids = ['all-bin','all-oct','all-dec','all-hex','all-b32','all-b36'];
+  const bases = [2,8,10,16,32,36];
+  const names = ['Binary','Octal','Decimal','Hex','Base 32','Base 36'];
+  if(!val){ ids.forEach((id,i)=>{ document.getElementById(id).textContent='—'; document.getElementById(id).className='base-val empty'; }); return; }
+  const dec = parseInt(val, fromBase);
+  if(isNaN(dec)){ ids.forEach(id=>{ document.getElementById(id).textContent='Invalid'; document.getElementById(id).className='base-val error'; }); return; }
+  ids.forEach((id,i)=>{
+    const out = dec.toString(bases[i]).toUpperCase();
+    document.getElementById(id).textContent = out;
+    document.getElementById(id).className = 'base-val';
+  });
+}
+
+// ═══════════════════════════════════════════════════
+// BINARY ↔ DECIMAL
+// ═══════════════════════════════════════════════════
+function bdFromBin(v){
+  v = v.trim();
+  if(!v){ document.getElementById('bd-dec').value=''; return; }
+  if(!isValidBin(v)){ setErr('bd-bin',true); document.getElementById('bd-dec').value=''; return; }
+  setErr('bd-bin',false);
+  document.getElementById('bd-dec').value = parseInt(v,2);
+}
+function bdFromDec(v){
+  v = v.trim();
+  if(!v){ document.getElementById('bd-bin').value=''; return; }
+  if(!isValidDec(v)){ setErr('bd-dec',true); document.getElementById('bd-bin').value=''; return; }
+  setErr('bd-dec',false);
+  document.getElementById('bd-bin').value = parseInt(v,10).toString(2);
+}
+function bdSwap(){
+  const a=document.getElementById('bd-bin').value;
+  const b=document.getElementById('bd-dec').value;
+  document.getElementById('bd-bin').value=b;
+  document.getElementById('bd-dec').value=a;
+}
+
+// ═══════════════════════════════════════════════════
+// BINARY ↔ HEX
+// ═══════════════════════════════════════════════════
+function bhFromBin(v){
+  v=v.trim();
+  if(!v){document.getElementById('bh-hex').value='';return;}
+  if(!isValidBin(v)){setErr('bh-bin',true);document.getElementById('bh-hex').value='';return;}
+  setErr('bh-bin',false);
+  document.getElementById('bh-hex').value=parseInt(v,2).toString(16).toUpperCase();
+}
+function bhFromHex(v){
+  v=v.trim();
+  if(!v){document.getElementById('bh-bin').value='';return;}
+  if(!isValidHex(v)){setErr('bh-hex',true);document.getElementById('bh-bin').value='';return;}
+  setErr('bh-hex',false);
+  document.getElementById('bh-bin').value=parseInt(v,16).toString(2);
+}
+function bhSwap(){
+  const a=document.getElementById('bh-bin').value;
+  const b=document.getElementById('bh-hex').value;
+  document.getElementById('bh-bin').value=b;
+  document.getElementById('bh-hex').value=a;
+}
+
+// ═══════════════════════════════════════════════════
+// BINARY ↔ OCTAL
+// ═══════════════════════════════════════════════════
+function boFromBin(v){
+  v=v.trim();
+  if(!v){document.getElementById('bo-oct').value='';return;}
+  if(!isValidBin(v)){setErr('bo-bin',true);document.getElementById('bo-oct').value='';return;}
+  setErr('bo-bin',false);
+  document.getElementById('bo-oct').value=parseInt(v,2).toString(8);
+}
+function boFromOct(v){
+  v=v.trim();
+  if(!v){document.getElementById('bo-bin').value='';return;}
+  if(!isValidOct(v)){setErr('bo-oct',true);document.getElementById('bo-bin').value='';return;}
+  setErr('bo-oct',false);
+  document.getElementById('bo-bin').value=parseInt(v,8).toString(2);
+}
+function boSwap(){
+  const a=document.getElementById('bo-bin').value;
+  const b=document.getElementById('bo-oct').value;
+  document.getElementById('bo-bin').value=b;
+  document.getElementById('bo-oct').value=a;
+}
+
+// ═══════════════════════════════════════════════════
+// DECIMAL ↔ HEX
+// ═══════════════════════════════════════════════════
+function dhFromDec(v){
+  v=v.trim();
+  if(!v){document.getElementById('dh-hex').value='';return;}
+  if(!isValidDec(v)){setErr('dh-dec',true);document.getElementById('dh-hex').value='';return;}
+  setErr('dh-dec',false);
+  document.getElementById('dh-hex').value=parseInt(v,10).toString(16).toUpperCase();
+}
+function dhFromHex(v){
+  v=v.trim();
+  if(!v){document.getElementById('dh-dec').value='';return;}
+  if(!isValidHex(v)){setErr('dh-hex',true);document.getElementById('dh-dec').value='';return;}
+  setErr('dh-hex',false);
+  document.getElementById('dh-dec').value=parseInt(v,16);
+}
+function dhSwap(){
+  const a=document.getElementById('dh-dec').value;
+  const b=document.getElementById('dh-hex').value;
+  document.getElementById('dh-dec').value=b;
+  document.getElementById('dh-hex').value=a;
+}
+
+// ═══════════════════════════════════════════════════
+// ROMAN NUMERALS
+// ═══════════════════════════════════════════════════
+const ROM_VAL = [
+  [1000,'M'],[900,'CM'],[500,'D'],[400,'CD'],
+  [100,'C'],[90,'XC'],[50,'L'],[40,'XL'],
+  [10,'X'],[9,'IX'],[5,'V'],[4,'IV'],[1,'I']
+];
+function toRoman(n){
+  if(n<1||n>3999) return null;
+  let r='';
+  for(const [v,s] of ROM_VAL){ while(n>=v){r+=s;n-=v;} }
+  return r;
+}
+function fromRoman(s){
+  s=s.toUpperCase().trim();
+  const map={I:1,V:5,X:10,L:50,C:100,D:500,M:1000};
+  let n=0;
+  for(let i=0;i<s.length;i++){
+    const cur=map[s[i]], nxt=map[s[i+1]];
+    if(!cur) return null;
+    n += (nxt&&nxt>cur) ? -cur : cur;
+  }
+  return n>0?n:null;
+}
+function rmFromDec(v){
+  v=v.trim();
+  if(!v){document.getElementById('rm-rom').value='';hidRomanDisplay();return;}
+  const n=parseInt(v);
+  const r=toRoman(n);
+  if(!r){setErr('rm-dec',true);document.getElementById('rm-rom').value='Out of range (1–3999)';hidRomanDisplay();return;}
+  setErr('rm-dec',false);
+  document.getElementById('rm-rom').value=r;
+  showRomanDisplay(r,n);
+}
+function rmFromRom(v){
+  v=v.toUpperCase().trim();
+  if(!v){document.getElementById('rm-dec').value='';hidRomanDisplay();return;}
+  const n=fromRoman(v);
+  if(!n){setErr('rm-rom',true);document.getElementById('rm-dec').value='';hidRomanDisplay();return;}
+  setErr('rm-rom',false);
+  document.getElementById('rm-dec').value=n;
+  showRomanDisplay(v,n);
+}
+function rmSwap(){
+  const a=document.getElementById('rm-dec').value;
+  const b=document.getElementById('rm-rom').value;
+  document.getElementById('rm-dec').value=b;
+  document.getElementById('rm-rom').value=a;
+}
+function showRomanDisplay(rom,num){
+  document.getElementById('roman-display').style.display='block';
+  document.getElementById('roman-big-text').textContent=rom;
+  document.getElementById('roman-num-text').textContent=num.toLocaleString('en-IN');
+}
+function hidRomanDisplay(){
+  document.getElementById('roman-display').style.display='none';
+}
+
+// ═══════════════════════════════════════════════════
+// BASE CONVERTER
+// ═══════════════════════════════════════════════════
+let fromBase=10;
+const OUTPUT_BASES=[2,8,10,16,32,36];
+
+function setFromBase(b,btn){
+  if(!b||b<2||b>36) return;
+  fromBase=b;
+  document.querySelectorAll('.base-pill').forEach(p=>p.classList.remove('active'));
+  if(btn) btn.classList.add('active');
+  document.getElementById('from-base-label').textContent=b;
+  convertBase();
+}
+function convertBase(){
+  const val=document.getElementById('bc-input').value.trim();
+  const wrap=document.getElementById('bc-outputs');
+  if(!val){wrap.innerHTML='<p style="font-size:.8rem;color:var(--muted2);">Enter a number above to see conversions.</p>';return;}
+  const dec=parseInt(val,fromBase);
+  if(isNaN(dec)){wrap.innerHTML='<p style="font-size:.8rem;color:var(--a2);">Invalid number for base '+fromBase+'.</p>';return;}
+  const labels=['Binary (2)','Octal (8)','Decimal (10)','Hex (16)','Base 32','Base 36'];
+  let html='<div style="display:flex;flex-direction:column;gap:10px;">';
+  OUTPUT_BASES.forEach((b,i)=>{
+    const out=dec.toString(b).toUpperCase();
+    const isFrom=b===fromBase;
+    html+=`<div class="base-inp-wrap">
+      <span class="base-inp-label">${labels[i]}</span>
+      <input class="base-inp${isFrom?' highlight':''}" readonly value="${out}"
+        onclick="this.select();navigator.clipboard.writeText(this.value).catch(()=>{});"
+        title="Click to copy"/>
+    </div>`;
+  });
+  html+='</div><p style="font-size:.68rem;color:var(--muted);margin-top:10px;">💡 Click any field to copy.</p>';
+  wrap.innerHTML=html;
+}
+
+// ═══════════════════════════════════════════════════
+// REFERENCE TABLES
+// ═══════════════════════════════════════════════════
+function buildRefTables(){
+  // Binary-Decimal 0-15
+  let bd='';
+  for(let i=0;i<8;i++){
+    bd+=`<tr><td>${i}</td><td>${i.toString(2).padStart(4,'0')}</td><td>${i+8}</td><td>${(i+8).toString(2).padStart(4,'0')}</td></tr>`;
+  }
+  document.getElementById('bd-ref-body').innerHTML=bd;
+
+  // Binary-Hex 0-F
+  let bh='';
+  for(let i=0;i<16;i++){
+    bh+=`<tr><td>${i.toString(16).toUpperCase()}</td><td>${i.toString(2).padStart(4,'0')}</td><td>${i}</td></tr>`;
+  }
+  document.getElementById('bh-ref-body').innerHTML=bh;
+
+  // Binary-Octal 0-7
+  let bo='';
+  for(let i=0;i<8;i++){
+    bo+=`<tr><td>${i}</td><td>${i.toString(2).padStart(3,'0')}</td><td>${i}</td></tr>`;
+  }
+  document.getElementById('bo-ref-body').innerHTML=bo;
+
+  // Dec-Hex 0-255 (3 columns)
+  let dh='';
+  for(let i=0;i<51;i++){
+    const a=i, b=i+51, c=i+102;
+    dh+=`<tr>
+      <td>${a}</td><td>${a.toString(16).toUpperCase()}</td>
+      <td>${b<256?b:''}</td><td>${b<256?b.toString(16).toUpperCase():''}</td>
+      <td>${c<256?c:''}</td><td>${c<256?c.toString(16).toUpperCase():''}</td>
+    </tr>`;
+  }
+  document.getElementById('dh-ref-body').innerHTML=dh;
+}
+
+// Init
+buildRefTables();
+convertBase();
+</script>
+</body>
+</html>

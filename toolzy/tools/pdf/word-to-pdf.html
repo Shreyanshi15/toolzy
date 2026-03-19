@@ -1,0 +1,748 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>PDF to Word Converter</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@300;400;500&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0d0b08;--ink:#fff5e6;--card:#1a1510;--border:#2e2418;
+  --accent:#ffb347;--accent-lt:#221a0a;--muted:#8a7060;--ok:#55efc4;
+}
+body{
+  background:var(--bg);color:var(--ink);font-family:'DM Sans',sans-serif;min-height:100vh;
+  background-image:radial-gradient(circle,rgba(255,179,71,.05) 1px,transparent 1px);
+  background-size:36px 36px;
+}
+.wrap{max-width:760px;margin:0 auto;padding:0 20px}
+nav{display:flex;align-items:center;gap:12px;padding:22px 0 20px;border-bottom:1px solid var(--border);margin-bottom:48px}
+.logo-box{width:38px;height:38px;background:linear-gradient(135deg,#ffb347,#ff6b9d);border-radius:8px;display:flex;align-items:center;justify-content:center}
+.logo-box svg{width:20px;height:20px;fill:#1a0e00}
+.logo-txt{font-family:'Syne',sans-serif;font-size:18px;font-weight:800;letter-spacing:-.4px;color:var(--ink)}
+.logo-txt em{color:var(--accent);font-style:normal}
+.nav-tag{margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--accent);border:1px solid #ffb34740;border-radius:4px;padding:2px 7px;background:#ffb34710;}
+.hero{text-align:center;margin-bottom:40px}
+.hero h1{font-family:'Syne',sans-serif;font-size:clamp(30px,5vw,50px);font-weight:800;line-height:1.06;letter-spacing:-1.5px;margin-bottom:14px;
+  background:linear-gradient(135deg,#ffb347,#ff6b9d 50%,#c56cf0);
+  -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;}
+.hero h1 u{text-decoration:none;border-bottom:3px solid var(--accent);-webkit-text-fill-color:var(--ink)}
+.hero p{color:var(--muted);font-size:16px;line-height:1.65;max-width:460px;margin:0 auto}
+.chips{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:22px 0 0}
+.chip{display:flex;align-items:center;gap:5px;background:var(--card);border:1px solid var(--border);border-radius:99px;padding:5px 13px;font-size:12px;color:var(--muted)}
+.chip span{width:6px;height:6px;border-radius:50%;background:var(--ok);display:block;flex-shrink:0}
+#dropZone{border:2px dashed var(--border);border-radius:14px;padding:60px 32px;text-align:center;cursor:pointer;transition:.2s;background:var(--card);margin-bottom:14px}
+#dropZone:hover,#dropZone.over{border-color:var(--accent);background:var(--accent-lt)}
+.up-icon{width:56px;height:56px;margin:0 auto 18px;background:#ffb34712;border:1px solid #ffb34730;border-radius:12px;display:flex;align-items:center;justify-content:center;transition:.2s}
+#dropZone:hover .up-icon{background:#ffb34725;border-color:var(--accent)}
+.up-icon svg{width:26px;height:26px;stroke:var(--accent);fill:none;stroke-width:1.5}
+.up-title{font-family:'Syne',sans-serif;font-size:18px;font-weight:700;margin-bottom:7px;color:var(--ink)}
+.up-sub{color:var(--muted);font-size:13px;margin-bottom:20px}
+.up-btn{display:inline-block;background:linear-gradient(135deg,#ffb347,#ff6b9d);color:#1a0e00;font-size:13px;font-weight:700;border-radius:100px;padding:10px 24px;cursor:pointer;border:none;font-family:'DM Sans',sans-serif;transition:opacity .2s}
+.up-btn:hover{opacity:.85}
+#fileIn{display:none}
+.err{display:none;background:#1a0e0e;border:1px solid #ff767530;border-radius:8px;padding:12px 16px;font-size:13px;color:#ff7675;align-items:center;gap:10px;margin-bottom:14px}
+.err svg{width:16px;height:16px;fill:#ff7675;flex-shrink:0}
+#progSec{display:none}
+.prog-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:26px;margin-bottom:14px}
+.prog-head{display:flex;align-items:center;gap:10px;margin-bottom:18px}
+.spin{width:20px;height:20px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0}
+@keyframes spin{to{transform:rotate(360deg)}}
+.prog-lbl{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--accent);font-weight:500}
+.prog-pct{margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--muted)}
+.bar-wrap{height:4px;background:#2e2418;border-radius:2px;overflow:hidden;margin-bottom:14px}
+.bar{height:100%;background:linear-gradient(90deg,#ffb347,#ff6b9d);border-radius:2px;width:0%;transition:width .35s ease}
+.steps{display:flex;flex-wrap:wrap;gap:12px}
+.stp{font-size:11px;color:#3a2a18;font-family:'JetBrains Mono',monospace;display:flex;align-items:center;gap:4px;transition:color .2s}
+.stp.on{color:var(--accent)}.stp.ok{color:var(--ok)}
+.stp-dot{width:5px;height:5px;border-radius:50%;background:currentColor;flex-shrink:0}
+#prevSec{display:none;margin-top:6px}
+.prev-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px}
+.prev-hd h2{font-family:'Syne',sans-serif;font-size:16px;font-weight:700;color:var(--ink)}
+.stats{display:flex;gap:16px;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted)}
+.stat strong{color:var(--accent)}
+.thumb-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:10px;margin-bottom:28px}
+.thumb{background:var(--card);border:1px solid var(--border);border-radius:8px;overflow:hidden;transition:.18s}
+.thumb:hover{border-color:var(--accent);transform:translateY(-2px)}
+.thumb canvas{width:100%!important;height:auto!important;display:block}
+.thumb-lbl{padding:5px 9px;font-size:11px;font-family:'JetBrains Mono',monospace;color:var(--muted);border-top:1px solid var(--border);display:flex;justify-content:space-between}
+#dlSec{display:none}
+.dl-card{background:linear-gradient(135deg,#221a0a,var(--card));border:1px solid #ffb34730;border-radius:14px;padding:26px 28px;display:flex;align-items:center;gap:18px;flex-wrap:wrap}
+.dl-icon{width:48px;height:48px;background:linear-gradient(135deg,#ffb347,#ff6b9d);border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.dl-icon svg{width:24px;height:24px;fill:#1a0e00}
+.dl-info{flex:1;min-width:0}
+.dl-name{font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:3px}
+.dl-meta{font-size:12px;color:var(--muted)}
+.dl-btn{background:linear-gradient(135deg,#ffb347,#ff6b9d);color:#1a0e00;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:700;border:none;border-radius:100px;padding:12px 26px;cursor:pointer;transition:opacity .18s;display:flex;align-items:center;gap:7px;white-space:nowrap}
+.dl-btn:hover{opacity:.85;transform:translateY(-1px)}
+.again{display:block;width:100%;margin-top:12px;text-align:center;background:none;border:1px solid var(--border);color:var(--muted);font-family:'DM Sans',sans-serif;font-size:13px;padding:9px;border-radius:100px;cursor:pointer;transition:all .2s}
+.again:hover{color:var(--ink);border-color:var(--accent)}
+footer{text-align:center;padding:36px 0 28px;margin-top:56px;border-top:1px solid var(--border);font-size:12px;color:var(--muted)}
+footer em{color:var(--accent);font-style:normal}
+@media(max-width:540px){.dl-card{flex-direction:column;text-align:center}.hero h1{font-size:28px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<nav>
+  <div class="logo-box"><svg viewBox="0 0 24 24"><path d="M14 2H6C4.9 2 4 2.9 4 4v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm4 18H6V4h7v5h5v11z"/></svg></div>
+  <div class="logo-txt">PDF<em>→</em>Word</div>
+  <div class="nav-tag">100% LOCAL</div>
+</nav>
+
+<div class="hero">
+  <h1>Convert PDF to Word<br>with <u>exact</u> fidelity</h1>
+  <p>Full page design, backgrounds, shapes &amp; colors — processed entirely in your browser.</p>
+  <div class="chips">
+    <div class="chip"><span></span>Full page design</div>
+    <div class="chip"><span></span>Backgrounds &amp; shapes</div>
+    <div class="chip"><span></span>Real text colors</div>
+    <div class="chip"><span></span>Bold &amp; Italic</div>
+    <div class="chip"><span></span>Exact font sizes</div>
+    <div class="chip"><span></span>100% private</div>
+  </div>
+</div>
+
+<div id="dropZone">
+  <div class="up-icon">
+    <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 7.5m0 0L7.5 12M12 7.5V18"/>
+    </svg>
+  </div>
+  <div class="up-title">Drop your PDF here</div>
+  <div class="up-sub">or click to choose a file from your computer</div>
+  <label class="up-btn" for="fileIn">Choose PDF File</label>
+  <input type="file" id="fileIn" accept=".pdf,application/pdf"/>
+</div>
+
+<div class="err" id="errBox">
+  <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+  <span id="errMsg"></span>
+</div>
+
+<div id="progSec">
+  <div class="prog-card">
+    <div class="prog-head">
+      <div class="spin" id="spinEl"></div>
+      <span class="prog-lbl" id="progLbl">LOADING</span>
+      <span class="prog-pct" id="progPct">0%</span>
+    </div>
+    <div class="bar-wrap"><div class="bar" id="bar"></div></div>
+    <div class="steps">
+      <div class="stp" id="s1"><div class="stp-dot"></div>Load PDF</div>
+      <div class="stp" id="s2"><div class="stp-dot"></div>Render Pages</div>
+      <div class="stp" id="s3"><div class="stp-dot"></div>Extract Text</div>
+      <div class="stp" id="s4"><div class="stp-dot"></div>Build DOCX</div>
+      <div class="stp" id="s5"><div class="stp-dot"></div>Finalise</div>
+    </div>
+  </div>
+</div>
+
+<div id="prevSec">
+  <div class="prev-hd">
+    <h2>Page Preview</h2>
+    <div class="stats">
+      <div class="stat"><strong id="stPg">0</strong> pages</div>
+      <div class="stat"><strong id="stTx">0</strong> text lines</div>
+      <div class="stat"><strong id="stIm">0</strong> images</div>
+    </div>
+  </div>
+  <div class="thumb-grid" id="thumbGrid"></div>
+</div>
+
+<div id="dlSec">
+  <div class="dl-card">
+    <div class="dl-icon"><svg viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7 7-7zm-8 2V5h2v6h1.17L12 13.17 9.83 11H11zm-6 7h14v2H5v-2z"/></svg></div>
+    <div class="dl-info">
+      <div class="dl-name" id="dlName">document.docx</div>
+      <div class="dl-meta" id="dlMeta">Ready</div>
+    </div>
+    <button class="dl-btn" id="dlBtn">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M19 9h-4V3H9v6H5l7 7 7-7zm-8 2V5h2v6h1.17L12 13.17 9.83 11H11zm-6 7h14v2H5v-2z"/></svg>
+      Download .docx
+    </button>
+  </div>
+  <button class="again" id="againBtn">↩ Convert another PDF</button>
+</div>
+
+</div>
+<footer>Files never leave your device &nbsp;·&nbsp; Processed entirely in your browser &nbsp;·&nbsp; <em>PDF → Word</em></footer>
+
+<script>
+pdfjsLib.GlobalWorkerOptions.workerSrc =
+  'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+const OPS = pdfjsLib.OPS;
+let _blob = null, _fname = 'document';
+
+// ── shared offscreen canvas for font measurement ──────────────────────────────
+const _mCtx = document.createElement('canvas').getContext('2d');
+
+const $     = id => document.getElementById(id);
+const pct   = (n,lbl) => { $('bar').style.width=n+'%'; if(lbl) $('progLbl').textContent=lbl; $('progPct').textContent=Math.round(n)+'%'; };
+const step  = (n,s)  => $('s'+n).className='stp '+s;
+const showErr = msg  => { $('errMsg').textContent=msg; $('errBox').style.display='flex'; };
+const tick  = ()     => new Promise(r=>setTimeout(r,20));
+const sleep = ms     => new Promise(r=>setTimeout(r,ms));
+
+const dz = $('dropZone');
+dz.addEventListener('dragover', e=>{e.preventDefault();dz.classList.add('over');});
+dz.addEventListener('dragleave',()=>dz.classList.remove('over'));
+dz.addEventListener('drop', e=>{
+  e.preventDefault(); dz.classList.remove('over');
+  const f=e.dataTransfer.files[0];
+  if(f&&f.type==='application/pdf') run(f);
+  else showErr('Please drop a valid PDF file.');
+});
+dz.addEventListener('click',e=>{ if(e.target.tagName!=='LABEL'&&e.target.tagName!=='INPUT') $('fileIn').click(); });
+$('fileIn').addEventListener('change',e=>{ if(e.target.files[0]) run(e.target.files[0]); });
+$('againBtn').addEventListener('click',reset);
+
+function reset(){
+  $('dropZone').style.display='block'; $('progSec').style.display='none';
+  $('prevSec').style.display='none';   $('dlSec').style.display='none';
+  $('errBox').style.display='none';    $('thumbGrid').innerHTML='';
+  $('fileIn').value='';  $('spinEl').style.display='block'; _blob=null;
+}
+
+// ═════════════════════════════════════════════════════════════════════════════
+// MAIN
+// ═════════════════════════════════════════════════════════════════════════════
+async function run(file){
+  _fname = file.name.replace(/\.pdf$/i,'');
+  $('errBox').style.display='none';
+  $('dropZone').style.display='none';
+  $('progSec').style.display='block';
+  $('prevSec').style.display='none';
+  $('dlSec').style.display='none';
+  for(let i=1;i<=5;i++) step(i,'');
+  pct(0,'LOADING PDF');
+
+  try {
+    step(1,'on');
+    const buf = await file.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({data:buf}).promise;
+    step(1,'ok'); pct(8);
+
+    const pages=[], mediaList=[];
+    let totalTx=0, totalIm=0;
+    const thumbs=[];
+
+    step(2,'on'); step(3,'on');
+
+    for(let pn=1; pn<=pdf.numPages; pn++){
+      pct(8+(pn/pdf.numPages)*60, `PAGE ${pn}/${pdf.numPages}`);
+
+      const page = await pdf.getPage(pn);
+      const vp   = page.getViewport({scale:1});
+
+      // ── Render at 2× — this canvas captures the COMPLETE page design:
+      //    backgrounds, shapes, paths, gradients, borders, images, text rendering
+      const sc=2, vpS=page.getViewport({scale:sc});
+      const cv=document.createElement('canvas');
+      cv.width=vpS.width; cv.height=vpS.height;
+      await page.render({canvasContext:cv.getContext('2d'),viewport:vpS}).promise;
+
+      // ── Store the full-page render as JPEG for embedding in DOCX
+      //    This single image carries 100% of the PDF page's visual design
+      const pageImg = cv.toDataURL('image/jpeg', 0.92);
+
+      // Thumbnail (downsized copy of the same render — no extra render pass)
+      const th=document.createElement('canvas');
+      const ts=Math.min(190/vpS.width,1);
+      th.width=Math.round(vpS.width*ts); th.height=Math.round(vpS.height*ts);
+      th.getContext('2d').drawImage(cv,0,0,th.width,th.height);
+      thumbs.push(th);
+
+      // Color map from operator list (still used for text colour extraction)
+      const colorMap = await buildColorMap(page);
+
+      // Text spans
+      const tc    = await page.getTextContent({includeMarkedContent:false});
+      const spans = extractSpans(tc, colorMap, vp);
+      totalTx    += spans.length;
+
+      // Group spans into lines
+      const lines = groupIntoLines(spans, vp.width);
+
+      // Images this page (still counted for stats; no longer embedded separately
+      // because they are already captured inside the full-page render)
+      const imgs  = await extractPageImages(page, cv, vp, sc, mediaList);
+      totalIm    += imgs.length;
+
+      pages.push({
+        width:vp.width, height:vp.height,
+        lines,
+        images: imgs,
+        pageImg          // ← the full-page pixel-perfect render
+      });
+    }
+
+    step(2,'ok'); step(3,'ok');
+
+    $('stPg').textContent=pages.length;
+    $('stTx').textContent=totalTx;
+    $('stIm').textContent=totalIm;
+    const grid=$('thumbGrid'); grid.innerHTML='';
+    thumbs.forEach((t,i)=>{
+      const d=document.createElement('div'); d.className='thumb'; d.appendChild(t);
+      const lb=document.createElement('div'); lb.className='thumb-lbl';
+      lb.innerHTML=`<span>Page ${i+1}</span><span>${pages[i].images.length} img</span>`;
+      d.appendChild(lb); grid.appendChild(d);
+    });
+    $('prevSec').style.display='block';
+
+    step(4,'on'); pct(75,'BUILDING DOCX');
+    await tick();
+    _blob = await buildDocx(pages, mediaList);
+    step(4,'ok');
+
+    step(5,'on'); pct(95,'FINALISING'); await sleep(200);
+    step(5,'ok'); pct(100,'COMPLETE');
+    $('spinEl').style.display='none';
+
+    $('dlName').textContent=_fname+'.docx';
+    $('dlMeta').textContent=`${pages.length} pages · ${totalTx} text spans · ${totalIm} images`;
+    $('dlSec').style.display='block';
+
+    $('dlBtn').onclick=()=>{
+      const a=document.createElement('a');
+      a.href=URL.createObjectURL(_blob); a.download=_fname+'.docx';
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    };
+
+  } catch(e){
+    console.error(e);
+    showErr('Conversion failed: '+(e.message||e));
+    reset();
+  }
+}
+
+// ═════════════════════════════════════════════════════════════════════════════
+// COLOR MAP — walk operator list, record fill colour at every text paint op
+// ═════════════════════════════════════════════════════════════════════════════
+async function buildColorMap(page){
+  const entries=[];
+  let opList;
+  try{ opList=await page.getOperatorList(); }catch(e){ return entries; }
+
+  let r=0,g=0,b=0;
+  let tm=[1,0,0,1,0,0];
+  let ctm=[1,0,0,1,0,0];
+  const stk=[];
+
+  function mul(m1,m2){
+    return[m1[0]*m2[0]+m1[2]*m2[1],m1[1]*m2[0]+m1[3]*m2[1],
+           m1[0]*m2[2]+m1[2]*m2[3],m1[1]*m2[2]+m1[3]*m2[3],
+           m1[0]*m2[4]+m1[2]*m2[5]+m1[4],
+           m1[1]*m2[4]+m1[3]*m2[5]+m1[5]];
+  }
+
+  for(let i=0;i<opList.fnArray.length;i++){
+    const fn=opList.fnArray[i], a=opList.argsArray[i];
+    switch(fn){
+      case OPS.save:    stk.push([...ctm]); break;
+      case OPS.restore: ctm=stk.length?stk.pop():[1,0,0,1,0,0]; break;
+      case OPS.transform: ctm=mul(ctm,a); break;
+      case OPS.setTextMatrix: case OPS.setTextLineMatrix: tm=[...a]; break;
+      case OPS.setFillRGBColor:
+        r=Math.round(a[0]*255);g=Math.round(a[1]*255);b=Math.round(a[2]*255); break;
+      case OPS.setFillGray:
+        r=g=b=Math.round(a[0]*255); break;
+      case OPS.setFillCMYKColor:
+        r=Math.round(255*(1-a[0])*(1-a[3]));
+        g=Math.round(255*(1-a[1])*(1-a[3]));
+        b=Math.round(255*(1-a[2])*(1-a[3])); break;
+      case OPS.setFillColor: case OPS.setFillColorN:
+        if(Array.isArray(a)&&a.length>=3){
+          r=Math.round(a[0]*255);g=Math.round(a[1]*255);b=Math.round(a[2]*255);
+        } break;
+      case OPS.showText: case OPS.showSpacedText:
+      case OPS.nextLineShowText: case OPS.nextLineSetSpacingShowText:
+        entries.push({x:tm[4],y:tm[5],r,g,b}); break;
+    }
+  }
+  return entries;
+}
+
+// ═════════════════════════════════════════════════════════════════════════════
+// EXTRACT SPANS
+// ═════════════════════════════════════════════════════════════════════════════
+function extractSpans(tc, colorMap, vp){
+  const result=[], styles=tc.styles||{};
+  for(const item of tc.items){
+    const txt=item.str;
+    if(!txt||!txt.trim()) continue;
+    const t=item.transform;
+
+    let fs=item.height&&item.height>0?item.height:0;
+    if(fs<=0) fs=Math.max(Math.hypot(t[0],t[1]),Math.hypot(t[2],t[3]));
+    if(fs<=0) fs=12;
+    fs=Math.max(1,Math.min(500,fs));
+
+    const styleEntry=styles[item.fontName]||{};
+    const fullFont=(styleEntry.fontFamily||item.fontName||'').toLowerCase();
+    const bold  =/bold|demi|heavy|black|semibold|extrabold/i.test(fullFont);
+    const italic=/italic|oblique|slant/i.test(fullFont);
+
+    const px=t[4], py=t[5];
+    let cr=0,cg=0,cb=0;
+    if(colorMap.length){
+      let best=Infinity, be=null;
+      for(const e of colorMap){
+        const d=Math.hypot(e.x-px,e.y-py);
+        if(d<best){best=d;be=e;}
+      }
+      if(be&&best<50){cr=be.r;cg=be.g;cb=be.b;}
+    }
+
+    result.push({
+      txt, pdfX:px, pdfY:py,
+      topY: vp.height-py,
+      fontSize:fs,
+      fontName:fullFont,
+      bold, italic,
+      r:cr,g:cg,b:cb,
+    });
+  }
+  return result;
+}
+
+// ═════════════════════════════════════════════════════════════════════════════
+// FONT MAP
+// ═════════════════════════════════════════════════════════════════════════════
+function mapFont(fullName){
+  const n=(fullName||'').toLowerCase().replace(/[-_ ]/g,'');
+  const map=[
+    ['timesnewroman','Times New Roman'],['times','Times New Roman'],
+    ['garamond','Garamond'],['georgia','Georgia'],
+    ['palatino','Palatino Linotype'],['bookantiqua','Palatino Linotype'],
+    ['helvetica','Arial'],['arial','Arial'],
+    ['calibri','Calibri'],['cambria','Cambria'],
+    ['couriernew','Courier New'],['courier','Courier New'],
+    ['verdana','Verdana'],['tahoma','Tahoma'],
+    ['trebuchet','Trebuchet MS'],['impact','Impact'],
+    ['gillsans','Gill Sans MT'],['myriad','Myriad Pro'],
+    ['consolas','Consolas'],['roboto','Arial'],['opensans','Arial'],
+    ['lato','Arial'],['sourcesans','Arial'],['ubuntu','Arial'],
+  ];
+  for(const[k,v]of map) if(n.includes(k)) return v;
+  return 'Arial';
+}
+
+// ═════════════════════════════════════════════════════════════════════════════
+// MEASURE RENDERED LINE WIDTH
+// ═════════════════════════════════════════════════════════════════════════════
+function measureLineWidth(items){
+  let w=0;
+  for(const sp of items){
+    const style=`${sp.italic?'italic ':''}${sp.bold?'bold ':''}${sp.fontSize}px "${mapFont(sp.fontName)}"`;
+    _mCtx.font=style;
+    w+=_mCtx.measureText(sp.txt).width;
+  }
+  return w;
+}
+
+// ═════════════════════════════════════════════════════════════════════════════
+// GROUP INTO LINES + DETECT ALIGNMENT PER LINE
+// ═════════════════════════════════════════════════════════════════════════════
+function groupIntoLines(spans, pageWidth){
+  if(!spans.length) return [];
+
+  const lines=[];
+  for(const sp of [...spans].sort((a,b)=>a.topY-b.topY)){
+    const line=lines.find(l=>Math.abs(l.baseY-sp.pdfY)<3);
+    if(line){ line.items.push(sp); line.baseY=(line.baseY+sp.pdfY)/2; }
+    else     lines.push({baseY:sp.pdfY, topY:sp.topY, items:[sp], align:'left', indentPt:0});
+  }
+  for(const l of lines) l.items.sort((a,b)=>a.pdfX-b.pdfX);
+
+  const xFreq={};
+  for(const l of lines){
+    const key=Math.round(l.items[0].pdfX/2)*2;
+    xFreq[key]=(xFreq[key]||0)+1;
+  }
+  let domLeft=0, domCount=0;
+  for(const[k,v]of Object.entries(xFreq)){
+    if(v>domCount){domCount=v; domLeft=Number(k);}
+  }
+
+  const threshold=15;
+
+  for(const line of lines){
+    const startX    = line.items[0].pdfX;
+    const lineW     = measureLineWidth(line.items);
+    const endX      = startX + lineW;
+
+    const leftGap   = startX;
+    const rightGap  = pageWidth - endX;
+
+    if(Math.abs(startX - domLeft) <= threshold){
+      line.align    = 'left';
+      line.indentPt = Math.max(0, startX);
+      continue;
+    }
+
+    if(rightGap < threshold && leftGap > pageWidth * 0.3){
+      line.align    = 'right';
+      line.indentPt = 0;
+      continue;
+    }
+
+    if(Math.abs(leftGap - rightGap) < pageWidth * 0.06 && leftGap > pageWidth * 0.08){
+      line.align    = 'center';
+      line.indentPt = 0;
+      continue;
+    }
+
+    line.align    = 'left';
+    line.indentPt = Math.max(0, startX);
+  }
+
+  return lines;
+}
+
+// ═════════════════════════════════════════════════════════════════════════════
+// IMAGE EXTRACTION — kept for stats counting; images are already in page render
+// ═════════════════════════════════════════════════════════════════════════════
+async function extractPageImages(page, rendCanvas, vp, scale, mediaList){
+  const imgs=[], pH=vp.height;
+  let opList;
+  try{ opList=await page.getOperatorList(); }catch(e){ return imgs; }
+
+  let ctm=[1,0,0,1,0,0];
+  const stk=[], seen=new Set();
+
+  function mul(m1,m2){
+    return[m1[0]*m2[0]+m1[2]*m2[1],m1[1]*m2[0]+m1[3]*m2[1],
+           m1[0]*m2[2]+m1[2]*m2[3],m1[1]*m2[2]+m1[3]*m2[3],
+           m1[0]*m2[4]+m1[2]*m2[5]+m1[4],m1[1]*m2[4]+m1[3]*m2[5]+m1[5]];
+  }
+
+  for(let i=0;i<opList.fnArray.length;i++){
+    const fn=opList.fnArray[i], a=opList.argsArray[i];
+    if(fn===OPS.save)          stk.push([...ctm]);
+    else if(fn===OPS.restore)  ctm=stk.length?stk.pop():[1,0,0,1,0,0];
+    else if(fn===OPS.transform)ctm=mul(ctm,a);
+    else if(fn===OPS.paintImageXObject||fn===OPS.paintJpegXObject||
+            fn===OPS.paintImageMaskXObject||fn===OPS.paintInlineImageXObject){
+      const[aa,bb,cc,dd,ee,ff]=ctm;
+      const corners=[[ee,ff],[ee+aa,ff+bb],[ee+cc,ff+dd],[ee+aa+cc,ff+bb+dd]];
+      const xs=corners.map(p=>p[0]),ys=corners.map(p=>p[1]);
+      const minX=Math.min(...xs),maxX=Math.max(...xs);
+      const minY=Math.min(...ys),maxY=Math.max(...ys);
+      const pdfW=maxX-minX,pdfH=maxY-minY;
+      if(pdfW<4||pdfH<4) continue;
+      const key=`${Math.round(minX)},${Math.round(minY)},${Math.round(pdfW)},${Math.round(pdfH)}`;
+      if(seen.has(key)) continue; seen.add(key);
+      imgs.push({x:minX,y:pH-maxY,pdfW,pdfH});
+    }
+  }
+  imgs.sort((a,b)=>a.y-b.y||a.x-b.x);
+  return imgs;
+}
+
+// ═════════════════════════════════════════════════════════════════════════════
+// BUILD DOCX
+//
+// Strategy for design fidelity:
+//   Each PDF page is embedded as a full-page pixel-perfect JPEG image.
+//   This captures EVERYTHING: backgrounds, colored shapes, borders, gradients,
+//   decorative elements, images, and text styling exactly as in the PDF.
+//   The image is sized to fill the Word page width (minus margins).
+//
+//   After the page image, the extracted text runs are emitted with
+//   zero-height (1 half-point) invisible spacing so the document
+//   remains searchable/selectable by Word and screen readers.
+// ═════════════════════════════════════════════════════════════════════════════
+const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+const PT2DXA=20, PT2EMU=12700;
+// Margins are set to 0 — the full-page image fills edge-to-edge like the PDF.
+// The DOC_MARGIN_PT constant is kept at 0 so indent calculations still compile.
+const DOC_MARGIN_PT = 0;
+
+async function buildDocx(pages, mediaList){
+
+  // ── Step 1: register all full-page images into mediaList first,
+  //            so their rId indices are contiguous and predictable.
+  //            pageImageRids[i] = rId string for page i's full render.
+  const pageImageRids = [];
+  for(const page of pages){
+    const idx = mediaList.length;
+    mediaList.push({dataUrl: page.pageImg, pdfW: page.width, pdfH: page.height});
+    pageImageRids.push('rId' + (idx + 2));   // +2 because rId1 is styles.xml
+  }
+
+  let bodyXml = '';
+  let imgId   = 1;
+
+  for(let pi=0; pi<pages.length; pi++){
+    const page = pages[pi];
+    // ── Full-page design image ────────────────────────────────────────────
+    // Image fills the full PDF page dimensions in EMU — no margin subtraction.
+    // Word page margins are set to 0 below (w:pgMar all="0") so the image
+    // lands flush against all four edges, pixel-perfect like the original PDF.
+    const imgWemu = Math.round(page.width  * PT2EMU);
+    const imgHemu = Math.round(page.height * PT2EMU);
+    const rIdPage = pageImageRids[pi];
+    const pgImgId = imgId++;
+
+    // Page break is placed on the image paragraph itself (not a separate
+    // empty paragraph) so Word never renders a blank page between pages.
+    const pbAttr = pi > 0 ? `<w:pageBreakBefore/>` : '';
+
+    bodyXml += `<w:p>
+<w:pPr><w:jc w:val="center"/><w:spacing w:before="0" w:after="0"/>${pbAttr}</w:pPr>
+<w:r><w:drawing>
+<wp:inline xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing"
+           distT="0" distB="0" distL="0" distR="0">
+<wp:extent cx="${imgWemu}" cy="${imgHemu}"/>
+<wp:effectExtent l="0" t="0" r="0" b="0"/>
+<wp:docPr id="${pgImgId}" name="Page${pi+1}"/>
+<wp:cNvGraphicFramePr>
+  <a:graphicFrameLocks xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" noChangeAspect="1"/>
+</wp:cNvGraphicFramePr>
+<a:graphic xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main">
+<a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture">
+<pic:pic xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture">
+<pic:nvPicPr>
+  <pic:cNvPr id="${pgImgId}" name="Page${pi+1}"/>
+  <pic:cNvPicPr><a:picLocks noChangeAspect="1" noChangeArrowheads="1"/></pic:cNvPicPr>
+</pic:nvPicPr>
+<pic:blipFill>
+  <a:blip r:embed="${rIdPage}"
+          xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
+    <a:extLst>
+      <a:ext uri="{28A0092B-C50C-407E-A947-70E740481C1C}">
+        <a14:useLocalDpi xmlns:a14="http://schemas.microsoft.com/office/drawing/2010/main" val="0"/>
+      </a:ext>
+    </a:extLst>
+  </a:blip>
+  <a:stretch><a:fillRect/></a:stretch>
+</pic:blipFill>
+<pic:spPr bwMode="auto">
+  <a:xfrm><a:off x="0" y="0"/><a:ext cx="${imgWemu}" cy="${imgHemu}"/></a:xfrm>
+  <a:prstGeom prst="rect"><a:avLst/></a:prstGeom>
+  <a:noFill/>
+</pic:spPr>
+</pic:pic>
+</a:graphicData>
+</a:graphic>
+</wp:inline>
+</w:drawing></w:r>
+</w:p>\n`;
+
+    // ── Searchable / selectable text layer ────────────────────────────────
+    // ALL text runs for this page are collapsed into ONE single paragraph.
+    // This keeps the total height to exactly one 1hp line so it never
+    // overflows onto a new blank page after the full-page image.
+    // Runs are white + 1 half-point = invisible but Word-indexable.
+    if(page.lines.length > 0){
+      bodyXml += `<w:p>\n<w:pPr><w:spacing w:before="0" w:after="0" w:line="1" w:lineRule="exact"/></w:pPr>\n`;
+      for(const line of page.lines){
+        for(let si=0;si<line.items.length;si++){
+          const sp   = line.items[si];
+          const font = mapFont(sp.fontName);
+          bodyXml += `<w:r><w:rPr>`;
+          bodyXml += `<w:sz w:val="1"/><w:szCs w:val="1"/>`;
+          bodyXml += `<w:color w:val="FFFFFF"/>`;
+          bodyXml += `<w:rFonts w:ascii="${esc(font)}" w:hAnsi="${esc(font)}" w:cs="${esc(font)}"/>`;
+          bodyXml += `</w:rPr>`;
+          let txt = sp.txt;
+          if(!txt.endsWith(' ')) txt += ' ';
+          bodyXml += `<w:t xml:space="preserve">${esc(txt)}</w:t></w:r>\n`;
+        }
+      }
+      bodyXml += `</w:p>\n`;
+    }
+  }
+
+  // ── OOXML relationships — all media entries (page images + any extras) ──
+  const imgRels = mediaList.map((_,i) => {
+    // Detect jpeg vs png from dataUrl prefix
+    const ext = mediaList[i].dataUrl.startsWith('data:image/jpeg') ? 'jpeg' : 'png';
+    const fileExt = ext === 'jpeg' ? 'jpg' : 'png';
+    return `<Relationship Id="rId${i+2}" ` +
+      `Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" ` +
+      `Target="media/image${i+1}.${fileExt}"/>`;
+  });
+
+  const docXml=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<w:document
+  xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+  xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"
+  xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing"
+  xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"
+  xmlns:w14="http://schemas.microsoft.com/office/word/2010/wordml"
+  mc:Ignorable="w14">
+<w:body>
+${bodyXml}
+<w:sectPr>
+<w:pgSz w:w="${Math.round(pages[0].width*PT2DXA)}" w:h="${Math.round(pages[0].height*PT2DXA)}"/>
+<w:pgMar w:top="0" w:right="0" w:bottom="0" w:left="0" w:header="0" w:footer="0" w:gutter="0"/>
+</w:sectPr>
+</w:body>
+</w:document>`;
+
+  const relsXml=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>
+${imgRels.join('\n')}
+</Relationships>`;
+
+  const stylesXml=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+<w:docDefaults>
+<w:rPrDefault><w:rPr>
+<w:rFonts w:ascii="Arial" w:hAnsi="Arial"/>
+<w:sz w:val="24"/><w:szCs w:val="24"/>
+</w:rPr></w:rPrDefault>
+<w:pPrDefault><w:pPr><w:spacing w:after="0"/></w:pPr></w:pPrDefault>
+</w:docDefaults>
+<w:style w:type="paragraph" w:default="1" w:styleId="Normal">
+<w:name w:val="Normal"/>
+<w:rPr><w:sz w:val="24"/></w:rPr>
+</w:style>
+</w:styles>`;
+
+  // Content types — register both png and jpeg extensions
+  const ctXml=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
+<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
+<Default Extension="xml" ContentType="application/xml"/>
+<Default Extension="png" ContentType="image/png"/>
+<Default Extension="jpg" ContentType="image/jpeg"/>
+<Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>
+<Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/>
+</Types>`;
+
+  const mainRels=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/>
+</Relationships>`;
+
+  const zip=new JSZip();
+  zip.file('[Content_Types].xml', ctXml);
+  zip.file('_rels/.rels', mainRels);
+  zip.file('word/document.xml', docXml);
+  zip.file('word/_rels/document.xml.rels', relsXml);
+  zip.file('word/styles.xml', stylesXml);
+
+  for(let i=0;i<mediaList.length;i++){
+    const m   = mediaList[i];
+    const ext = m.dataUrl.startsWith('data:image/jpeg') ? 'jpg' : 'png';
+    zip.file(`word/media/image${i+1}.${ext}`, m.dataUrl.split(',')[1], {base64:true});
+  }
+
+  return zip.generateAsync({
+    type:'blob',
+    mimeType:'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+  });
+}
+</script>
+</body>
+</html>

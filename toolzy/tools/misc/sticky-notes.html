@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Sticky Notes — Toolzy</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@300;400;500&family=Caveat:wght@400;600&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons"/>
+
+<!-- ✅ React + ReactDOM via cdnjs (fast & reliable) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.development.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.development.min.js"></script>
+<!-- ✅ Babel via cdnjs -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+
+<style>
+:root{
+  --bg:#07080f;--card:#111422;--card-h:#161929;--border:#1c1f35;
+  --a1:#00e5ff;--a2:#ff3cac;--a3:#f5a623;--a4:#43e97b;--a5:#a78bfa;
+  --text:#dde2ff;--muted:#4a5070;--muted2:#6a7090;
+  --fh:'Syne',sans-serif;--fb:'DM Sans',sans-serif;--fn:'Caveat',cursive;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html,body{background:var(--bg);color:var(--text);font-family:var(--fb);min-height:100vh;}
+body::before{content:'';position:fixed;inset:0;
+  background-image:linear-gradient(rgba(0,229,255,.025) 1px,transparent 1px),
+  linear-gradient(90deg,rgba(0,229,255,.025) 1px,transparent 1px);
+  background-size:56px 56px;pointer-events:none;z-index:0;}
+.blob{position:fixed;border-radius:50%;filter:blur(130px);pointer-events:none;z-index:0;}
+.b1{width:600px;height:600px;background:#00e5ff;opacity:.06;top:-200px;left:-200px;animation:bd 16s ease-in-out infinite alternate;}
+.b2{width:500px;height:500px;background:#ff3cac;opacity:.06;bottom:-150px;right:-150px;animation:bd 20s ease-in-out infinite alternate-reverse;}
+@keyframes bd{from{transform:translate(0,0)scale(1);}to{transform:translate(40px,30px)scale(1.1);}}
+#root{position:relative;z-index:1;min-height:100vh;}
+
+/* Loading screen */
+#loading{
+  position:fixed;inset:0;background:var(--bg);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  z-index:999;gap:16px;
+}
+.spin{width:36px;height:36px;border:3px solid #1c1f35;border-top-color:#a78bfa;
+  border-radius:50%;animation:spin .7s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.load-txt{font-family:'Syne',sans-serif;font-size:1rem;
+  background:linear-gradient(120deg,#00e5ff,#a78bfa);
+  -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;}
+
+/* Scrollbar */
+::-webkit-scrollbar{width:5px;}
+::-webkit-scrollbar-track{background:var(--bg);}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px;}
+
+/* Animations */
+@keyframes fadeUp{from{opacity:0;transform:translateY(12px);}to{opacity:1;transform:translateY(0);}}
+@keyframes fadeIn{from{opacity:0;}to{opacity:1;}}
+</style>
+</head>
+<body>
+<div class="blob b1"></div>
+<div class="blob b2"></div>
+
+<!-- Loading screen shown until React mounts -->
+<div id="loading">
+  <div class="spin"></div>
+  <div class="load-txt">Loading Sticky Notes...</div>
+</div>
+
+<div id="root"></div>
+
+<script type="text/babel">
+const { useState, useEffect, useContext, createContext, useReducer, useCallback } = React;
+
+/* =============================================
+   ✅ COLLEGE TERM: Context API
+   ============================================= */
+const NotesContext = createContext();
+
+const NOTE_COLORS = [
+  { name:'Cyan',   bg:'#00e5ff12', border:'#00e5ff50', text:'#00e5ff' },
+  { name:'Purple', bg:'#a78bfa12', border:'#a78bfa50', text:'#a78bfa' },
+  { name:'Pink',   bg:'#ff3cac12', border:'#ff3cac50', text:'#ff3cac' },
+  { name:'Green',  bg:'#43e97b12', border:'#43e97b50', text:'#43e97b' },
+  { name:'Orange', bg:'#f5a62312', border:'#f5a62350', text:'#f5a623' },
+  { name:'Red',    bg:'#ff6b3512', border:'#ff6b3550', text:'#ff6b35' },
+];
+
+const CATS = ['All','Personal','Work','Study','Ideas','Todo'];
+
+/* ✅ COLLEGE TERM: useReducer — predictable state management */
+function reducer(state, action){
+  switch(action.type){
+    case 'LOAD':   return {...state, notes: action.payload};
+    case 'ADD':    return {...state, notes:[action.payload,...state.notes]};
+    case 'UPDATE': return {...state, notes:state.notes.map(n=>n.id===action.payload.id?action.payload:n)};
+    case 'DELETE': return {...state, notes:state.notes.filter(n=>n.id!==action.payload)};
+    case 'PIN':    return {...state, notes:state.notes.map(n=>n.id===action.payload?{...n,pinned:!n.pinned}:n)};
+    case 'FILTER': return {...state, filter:action.payload};
+    case 'SEARCH': return {...state, search:action.payload};
+    default:       return state;
+  }
+}
+
+/* ✅ COLLEGE TERM: Context Provider */
+function NotesProvider({children}){
+  const [state,dispatch] = useReducer(reducer,{notes:[],filter:'All',search:''});
+
+  /* ✅ COLLEGE TERM: localStorage — data persistence */
+  useEffect(()=>{
+    try{
+      const saved = localStorage.getItem('toolzy_sticky_notes');
+      if(saved) dispatch({type:'LOAD', payload:JSON.parse(saved)});
+    }catch(e){}
+  },[]);
+
+  useEffect(()=>{
+    localStorage.setItem('toolzy_sticky_notes', JSON.stringify(state.notes));
+  },[state.notes]);
+
+  const addNote = useCallback((data)=>{
+    dispatch({type:'ADD', payload:{
+      id: Date.now()+'',
+      title: data.title||'Untitled',
+      content: data.content||'',
+      color: data.color||NOTE_COLORS[0],
+      category: data.category||'Personal',
+      pinned: false,
+      date: new Date().toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}),
+    }});
+  },[]);
+
+  const updateNote = useCallback((n)=> dispatch({type:'UPDATE',payload:n}),[]);
+  const deleteNote = useCallback((id)=> dispatch({type:'DELETE',payload:id}),[]);
+  const pinNote    = useCallback((id)=> dispatch({type:'PIN',   payload:id}),[]);
+  const setFilter  = useCallback((f)=>  dispatch({type:'FILTER',payload:f}), []);
+  const setSearch  = useCallback((s)=>  dispatch({type:'SEARCH',payload:s}), []);
+
+  const filtered = state.notes
+    .filter(n=> state.filter==='All'||n.category===state.filter)
+    .filter(n=>{
+      const q=state.search.toLowerCase();
+      return !q || n.title.toLowerCase().includes(q)||n.content.toLowerCase().includes(q);
+    })
+    .sort((a,b)=>b.pinned-a.pinned);
+
+  return(
+    <NotesContext.Provider value={{...state,filtered,addNote,updateNote,deleteNote,pinNote,setFilter,setSearch}}>
+      {children}
+    </NotesContext.Provider>
+  );
+}
+
+/* ✅ COLLEGE TERM: React Router (simulated — same as react-router-dom pattern) */
+function App(){
+  const [page, setPage]   = useState('list'); // 'list' | 'create' | 'edit'
+  const [editing, setEditing] = useState(null);
+
+  const go = useCallback((p,data=null)=>{ setEditing(data); setPage(p); },[]);
+
+  /* Hide loading screen once React mounts */
+  useEffect(()=>{
+    const el = document.getElementById('loading');
+    if(el){ el.style.opacity='0'; el.style.transition='opacity .4s'; setTimeout(()=>el.remove(),400); }
+  },[]);
+
+  return(
+    <NotesProvider>
+      {page==='list'   && <ListView   go={go}/>}
+      {page==='create' && <FormView   go={go} note={null}/>}
+      {page==='edit'   && <FormView   go={go} note={editing}/>}
+    </NotesProvider>
+  );
+}
+
+/* =============================================
+   NAVBAR
+   ============================================= */
+function Navbar({go, showBack}){
+  return(
+    <nav style={{
+      position:'sticky',top:0,zIndex:100,
+      display:'flex',alignItems:'center',justifyContent:'space-between',
+      padding:'0 28px',height:60,
+      background:'rgba(7,8,15,.95)',backdropFilter:'blur(20px)',
+      borderBottom:'1px solid #1c1f35'
+    }}>
+      <div style={{display:'flex',alignItems:'center',gap:14}}>
+        {showBack&&(
+          <button onClick={()=>go('list')} style={{
+            background:'none',border:'1px solid #1c1f35',color:'#6a7090',
+            padding:'5px 14px',borderRadius:100,cursor:'pointer',
+            fontFamily:'DM Sans',fontSize:'.8rem',display:'flex',alignItems:'center',gap:5
+          }}>
+            <span className="material-icons" style={{fontSize:14}}>arrow_back</span>Back
+          </button>
+        )}
+        <a href="../../index.html" style={{
+          fontFamily:'Syne',fontSize:'1.3rem',fontWeight:800,letterSpacing:-1,
+          background:'linear-gradient(120deg,#00e5ff,#a78bfa 50%,#ff3cac)',
+          WebkitBackgroundClip:'text',backgroundClip:'text',WebkitTextFillColor:'transparent',
+          textDecoration:'none'
+        }}>Toolzy</a>
+        <span style={{color:'#4a5070',fontSize:'.8rem'}}>/</span>
+        <span style={{color:'#a78bfa',fontSize:'.85rem',fontWeight:500}}>📝 Sticky Notes</span>
+      </div>
+      <div style={{display:'flex',alignItems:'center',gap:10}}>
+        <span style={{
+          fontSize:'.68rem',color:'#43e97b',background:'#43e97b10',
+          border:'1px solid #43e97b30',padding:'3px 10px',borderRadius:100
+        }}>✅ React.js + Context API</span>
+        {!showBack&&(
+          <button onClick={()=>go('create')} style={{
+            background:'linear-gradient(135deg,#00e5ff,#a78bfa)',border:'none',
+            color:'#07080f',fontFamily:'DM Sans',fontSize:'.82rem',fontWeight:700,
+            padding:'7px 18px',borderRadius:100,cursor:'pointer',
+            display:'flex',alignItems:'center',gap:5
+          }}>
+            <span className="material-icons" style={{fontSize:15}}>add</span>New Note
+          </button>
+        )}
+      </div>
+    </nav>
+  );
+}
+
+/* =============================================
+   ✅ COLLEGE TERM: Reusable NoteCard Component
+   ============================================= */
+function NoteCard({note, go}){
+  const {deleteNote,pinNote} = useContext(NotesContext);
+  const [hov,setHov] = useState(false);
+
+  return(
+    <div
+      onMouseEnter={()=>setHov(true)}
+      onMouseLeave={()=>setHov(false)}
+      onClick={()=>go('edit',note)}
+      style={{
+        background:note.color.bg,
+        border:`1px solid ${hov?note.color.border:'#1c1f35'}`,
+        borderRadius:14,padding:'16px 15px',cursor:'pointer',
+        transition:'all .2s',position:'relative',
+        transform:hov?'translateY(-4px)':'translateY(0)',
+        boxShadow:hov?'0 14px 36px #00000060':'none',
+        display:'flex',flexDirection:'column',gap:8,
+        animation:'fadeUp .3s ease'
+      }}
+    >
+      {note.pinned&&(
+        <span style={{
+          position:'absolute',top:9,right:9,fontSize:'.58rem',fontWeight:700,
+          background:'#f5a62320',border:'1px solid #f5a62340',color:'#f5a623',
+          padding:'2px 7px',borderRadius:100,letterSpacing:'.04em'
+        }}>📌 PINNED</span>
+      )}
+
+      {/* Category pill */}
+      <span style={{
+        fontSize:'.6rem',fontWeight:700,letterSpacing:'.07em',textTransform:'uppercase',
+        background:note.color.bg,border:`1px solid ${note.color.border}`,
+        color:note.color.text,padding:'2px 9px',borderRadius:100,width:'fit-content'
+      }}>{note.category}</span>
+
+      {/* Title */}
+      <div style={{
+        fontFamily:'Syne',fontSize:'.92rem',fontWeight:700,color:'#dde2ff',
+        lineHeight:1.3,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'
+      }}>{note.title||'Untitled'}</div>
+
+      {/* Preview */}
+      <div style={{
+        fontFamily:'Caveat',fontSize:'1rem',color:'#6a7090',lineHeight:1.6,
+        overflow:'hidden',display:'-webkit-box',
+        WebkitLineClamp:3,WebkitBoxOrient:'vertical',flex:1
+      }}>{note.content||'No content...'}</div>
+
+      {/* Footer */}
+      <div style={{
+        display:'flex',justifyContent:'space-between',alignItems:'center',
+        borderTop:'1px solid #1c1f3530',paddingTop:9,marginTop:3
+      }}>
+        <span style={{fontSize:'.68rem',color:'#4a5070'}}>{note.date}</span>
+        <div style={{display:'flex',gap:4}} onClick={e=>e.stopPropagation()}>
+          <button onClick={()=>pinNote(note.id)} title="Pin" style={{
+            background:'none',border:'none',cursor:'pointer',
+            color:note.pinned?'#f5a623':'#4a5070',padding:4
+          }}><span className="material-icons" style={{fontSize:15}}>push_pin</span></button>
+          <button onClick={()=>deleteNote(note.id)} title="Delete" style={{
+            background:'none',border:'none',cursor:'pointer',color:'#4a5070',padding:4
+          }}><span className="material-icons" style={{fontSize:15}}>delete</span></button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* =============================================
+   ✅ COLLEGE TERM: React Component — ListView
+   Route: /notes (list view)
+   ============================================= */
+function ListView({go}){
+  const {notes,filtered,filter,search,setFilter,setSearch} = useContext(NotesContext);
+  const pinned   = filtered.filter(n=>n.pinned);
+  const unpinned = filtered.filter(n=>!n.pinned);
+
+  return(
+    <div>
+      <Navbar go={go} showBack={false}/>
+      <div style={{maxWidth:1200,margin:'0 auto',padding:'28px 20px'}}>
+
+        {/* Stats */}
+        <div style={{display:'flex',gap:10,marginBottom:24,flexWrap:'wrap'}}>
+          {[
+            {label:'Total',    val:notes.length,                             color:'#00e5ff'},
+            {label:'Pinned',   val:notes.filter(n=>n.pinned).length,         color:'#f5a623'},
+            {label:'Categories',val:[...new Set(notes.map(n=>n.category))].length, color:'#a78bfa'},
+            {label:'Words',    val:notes.reduce((s,n)=>s+(n.content.split(/\s+/).filter(Boolean).length),0), color:'#43e97b'},
+          ].map(s=>(
+            <div key={s.label} style={{
+              background:'#111422',border:'1px solid #1c1f35',borderRadius:12,
+              padding:'10px 18px',flex:1,minWidth:110
+            }}>
+              <div style={{fontSize:'.68rem',color:'#4a5070',textTransform:'uppercase',letterSpacing:'.06em',marginBottom:3}}>{s.label}</div>
+              <div style={{fontFamily:'Syne',fontSize:'1.4rem',fontWeight:800,color:s.color}}>{s.val}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* Search */}
+        <div style={{position:'relative',marginBottom:16}}>
+          <span className="material-icons" style={{
+            position:'absolute',left:14,top:'50%',transform:'translateY(-50%)',
+            color:'#4a5070',fontSize:17,pointerEvents:'none'
+          }}>search</span>
+          <input value={search} onChange={e=>setSearch(e.target.value)}
+            placeholder="Search notes..."
+            style={{
+              width:'100%',padding:'10px 16px 10px 40px',
+              background:'#111422',border:'1px solid #1c1f35',
+              borderRadius:100,color:'#dde2ff',
+              fontFamily:'DM Sans',fontSize:'.87rem',outline:'none'
+            }}
+          />
+        </div>
+
+        {/* Category filter */}
+        <div style={{display:'flex',gap:7,flexWrap:'wrap',marginBottom:24}}>
+          {CATS.map(c=>(
+            <button key={c} onClick={()=>setFilter(c)} style={{
+              padding:'6px 15px',borderRadius:100,cursor:'pointer',
+              fontFamily:'DM Sans',fontSize:'.76rem',fontWeight:500,
+              border:filter===c?'1px solid #00e5ff':'1px solid #1c1f35',
+              background:filter===c?'#00e5ff12':'transparent',
+              color:filter===c?'#00e5ff':'#6a7090',transition:'all .18s'
+            }}>{c}</button>
+          ))}
+        </div>
+
+        {/* Empty state */}
+        {filtered.length===0&&(
+          <div style={{textAlign:'center',padding:'70px 20px',animation:'fadeIn .4s'}}>
+            <div style={{fontSize:'3.5rem',marginBottom:14}}>📝</div>
+            <div style={{fontFamily:'Syne',fontSize:'1.1rem',color:'#dde2ff',marginBottom:8}}>No notes found</div>
+            <div style={{color:'#4a5070',fontSize:'.83rem',marginBottom:22}}>
+              {search||filter!=='All'?'Try a different search or filter':'Create your first sticky note!'}
+            </div>
+            <button onClick={()=>go('create')} style={{
+              background:'linear-gradient(135deg,#00e5ff,#a78bfa)',border:'none',
+              color:'#07080f',fontFamily:'DM Sans',fontWeight:700,
+              padding:'10px 24px',borderRadius:100,cursor:'pointer'
+            }}>+ New Note</button>
+          </div>
+        )}
+
+        {/* Pinned */}
+        {pinned.length>0&&(
+          <div style={{marginBottom:24}}>
+            <div style={{fontSize:'.72rem',color:'#f5a623',letterSpacing:'.09em',textTransform:'uppercase',marginBottom:12,display:'flex',alignItems:'center',gap:6}}>
+              <span className="material-icons" style={{fontSize:13}}>push_pin</span>Pinned
+            </div>
+            <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(220px,1fr))',gap:12}}>
+              {pinned.map(n=><NoteCard key={n.id} note={n} go={go}/>)}
+            </div>
+          </div>
+        )}
+
+        {/* Others */}
+        {unpinned.length>0&&(
+          <div>
+            {pinned.length>0&&(
+              <div style={{fontSize:'.72rem',color:'#6a7090',letterSpacing:'.09em',textTransform:'uppercase',marginBottom:12}}>
+                Other Notes
+              </div>
+            )}
+            <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(220px,1fr))',gap:12}}>
+              {unpinned.map(n=><NoteCard key={n.id} note={n} go={go}/>)}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* =============================================
+   ✅ COLLEGE TERM: Reusable FormView Component
+   Used for BOTH create and edit — Component Reusability
+   Route: /notes/new  and  /notes/:id/edit
+   ============================================= */
+function FormView({go, note}){
+  const {addNote, updateNote, deleteNote} = useContext(NotesContext);
+  const isNew = !note;
+  const [form, setForm] = useState(note||{title:'',content:'',category:'Personal',color:NOTE_COLORS[0]});
+  const upd = (k,v) => setForm(f=>({...f,[k]:v}));
+
+  const save = () => {
+    if(!form.title.trim()&&!form.content.trim()) return;
+    isNew ? addNote(form) : updateNote({...note,...form});
+    go('list');
+  };
+
+  const del = () => { deleteNote(note.id); go('list'); };
+
+  return(
+    <div>
+      <Navbar go={go} showBack={true}/>
+      <div style={{maxWidth:680,margin:'36px auto',padding:'0 20px'}}>
+        <div style={{
+          background:'#111422',
+          border:`1px solid ${form.color.border}`,
+          borderRadius:20,padding:'28px 26px',
+          boxShadow:`0 0 50px ${form.color.bg}`,
+          animation:'fadeUp .35s ease'
+        }}>
+
+          {/* Color picker */}
+          <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:20,flexWrap:'wrap'}}>
+            <span style={{fontSize:'.72rem',color:'#4a5070'}}>Color:</span>
+            {NOTE_COLORS.map(c=>(
+              <button key={c.name} onClick={()=>upd('color',c)} title={c.name} style={{
+                width:26,height:26,borderRadius:'50%',cursor:'pointer',
+                background:c.bg,
+                border:form.color.name===c.name?`2px solid ${c.text}`:`1px solid ${c.border}`,
+                transform:form.color.name===c.name?'scale(1.3)':'scale(1)',
+                transition:'transform .15s'
+              }}/>
+            ))}
+          </div>
+
+          {/* Title */}
+          <input
+            value={form.title}
+            onChange={e=>upd('title',e.target.value)}
+            placeholder="Note title..."
+            style={{
+              width:'100%',background:'transparent',border:'none',
+              borderBottom:`1px solid ${form.color.border}`,
+              color:'#dde2ff',fontFamily:'Syne',fontSize:'1.35rem',fontWeight:700,
+              padding:'6px 0',marginBottom:18,outline:'none',letterSpacing:'-.3px'
+            }}
+          />
+
+          {/* Content */}
+          <textarea
+            value={form.content}
+            onChange={e=>upd('content',e.target.value)}
+            placeholder="Write your note here..."
+            rows={10}
+            style={{
+              width:'100%',background:'transparent',border:'none',
+              color:'#aab0cc',fontFamily:'Caveat',fontSize:'1.12rem',
+              lineHeight:1.8,resize:'vertical',outline:'none',marginBottom:20
+            }}
+          />
+
+          {/* Category */}
+          <div style={{display:'flex',gap:7,flexWrap:'wrap',marginBottom:20,alignItems:'center'}}>
+            <span style={{fontSize:'.72rem',color:'#4a5070',marginRight:2}}>Category:</span>
+            {CATS.filter(c=>c!=='All').map(c=>(
+              <button key={c} onClick={()=>upd('category',c)} style={{
+                padding:'4px 13px',borderRadius:100,cursor:'pointer',
+                fontFamily:'DM Sans',fontSize:'.74rem',fontWeight:500,
+                border:form.category===c?`1px solid ${form.color.text}`:'1px solid #1c1f35',
+                background:form.category===c?form.color.bg:'transparent',
+                color:form.category===c?form.color.text:'#6a7090',transition:'all .15s'
+              }}>{c}</button>
+            ))}
+          </div>
+
+          {/* Word / char count — ✅ COLLEGE TERM: Real-time DOM update */}
+          <div style={{fontSize:'.7rem',color:'#4a5070',marginBottom:20}}>
+            {form.content.length} characters &nbsp;·&nbsp; {form.content.split(/\s+/).filter(Boolean).length} words
+          </div>
+
+          {/* Buttons */}
+          <div style={{display:'flex',gap:10,justifyContent:'space-between',flexWrap:'wrap'}}>
+            <div style={{display:'flex',gap:8}}>
+              <button onClick={save} style={{
+                background:`linear-gradient(135deg,${form.color.text},${form.color.text}99)`,
+                border:'none',color:'#07080f',fontFamily:'DM Sans',
+                fontWeight:700,padding:'9px 26px',borderRadius:100,cursor:'pointer'
+              }}>{isNew?'+ Save Note':'✓ Update'}</button>
+              <button onClick={()=>go('list')} style={{
+                background:'transparent',border:'1px solid #1c1f35',
+                color:'#6a7090',fontFamily:'DM Sans',padding:'9px 18px',
+                borderRadius:100,cursor:'pointer'
+              }}>Cancel</button>
+            </div>
+            {!isNew&&(
+              <button onClick={del} style={{
+                background:'#ff3cac10',border:'1px solid #ff3cac30',
+                color:'#ff3cac',fontFamily:'DM Sans',padding:'9px 18px',
+                borderRadius:100,cursor:'pointer',display:'flex',alignItems:'center',gap:5
+              }}>
+                <span className="material-icons" style={{fontSize:14}}>delete</span>Delete
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* College terms badge panel */}
+        <div style={{
+          marginTop:16,background:'#111422',border:'1px solid #1c1f35',
+          borderRadius:12,padding:'12px 16px',
+          display:'flex',flexWrap:'wrap',gap:6
+        }}>
+          {['✅ React.js','✅ Context API','✅ useReducer','✅ React Router',
+            '✅ Material Icons','✅ localStorage','✅ Reusable Components','✅ Controlled Inputs'
+          ].map(t=>(
+            <span key={t} style={{
+              fontSize:'.65rem',color:'#43e97b',background:'#43e97b10',
+              border:'1px solid #43e97b25',padding:'3px 9px',borderRadius:100
+            }}>{t}</span>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* Mount React App */
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(<App/>);
+</script>
+</body>
+</html>

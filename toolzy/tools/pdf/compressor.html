@@ -1,0 +1,789 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Toolzy — Compressor</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=JetBrains+Mono:wght@300;400;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#05050d;--surface:#080812;--surface2:#0d0d1e;
+  --border:#1c1c38;--border2:#2a2a50;
+  --cyan:#00e5ff;--orange:#ff6b35;--violet:#9b5de5;
+  --green:#00f5a0;--red:#ff4466;--yellow:#ffd60a;
+  --text:#ccd6ff;--text-dim:#3d4a70;--text-med:#7080aa;
+}
+html{scroll-behavior:smooth;}
+body{background:var(--bg);font-family:'JetBrains Mono',monospace;color:var(--text);min-height:100vh;overflow-x:hidden;}
+body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(0,229,255,.015) 1px,transparent 1px),linear-gradient(90deg,rgba(0,229,255,.015) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0;mask-image:radial-gradient(ellipse 80% 80% at 50% 30%,black 0%,transparent 85%);}
+body::after{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 50% 40% at 10% 10%,rgba(0,229,255,.03) 0%,transparent 70%),radial-gradient(ellipse 40% 50% at 90% 90%,rgba(155,93,229,.03) 0%,transparent 70%);pointer-events:none;z-index:0;}
+
+/* NAV */
+nav{position:sticky;top:0;z-index:100;background:rgba(5,5,13,.92);backdrop-filter:blur(18px);border-bottom:1px solid var(--border);padding:0 32px;display:flex;align-items:center;justify-content:space-between;height:56px;}
+.nav-brand{display:flex;align-items:center;gap:10px;text-decoration:none;}
+.nav-logo{width:30px;height:30px;border:1.5px solid var(--cyan);border-radius:6px;display:flex;align-items:center;justify-content:center;font-family:'Orbitron',sans-serif;font-size:13px;font-weight:900;color:var(--cyan);box-shadow:0 0 12px rgba(0,229,255,.4);text-shadow:0 0 8px var(--cyan);}
+.nav-name{font-family:'Orbitron',sans-serif;font-size:14px;font-weight:900;letter-spacing:5px;color:var(--text);}
+.nav-links{display:flex;gap:6px;align-items:center;}
+.nav-link{padding:6px 14px;border-radius:8px;border:1px solid transparent;font-size:10px;letter-spacing:2px;color:var(--text-med);text-decoration:none;transition:all .2s;cursor:pointer;font-family:'JetBrains Mono',monospace;background:none;}
+.nav-link:hover{color:var(--text);border-color:var(--border2);}
+.nav-link.active{color:var(--cyan);border-color:rgba(0,229,255,.35);background:rgba(0,229,255,.06);}
+
+/* PAGE */
+.page{position:relative;z-index:1;max-width:920px;margin:0 auto;padding:30px 20px 60px;}
+
+/* HERO */
+.hero{text-align:center;margin-bottom:26px;animation:fade-up .5s ease both;}
+@keyframes fade-up{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+.hero-tag{display:inline-block;font-size:8px;letter-spacing:4px;color:var(--cyan);border:1px solid rgba(0,229,255,.3);background:rgba(0,229,255,.06);padding:4px 14px;border-radius:20px;margin-bottom:12px;}
+.hero h1{font-family:'Orbitron',sans-serif;font-size:clamp(20px,4vw,34px);font-weight:900;letter-spacing:3px;background:linear-gradient(135deg,#fff 0%,var(--cyan) 50%,var(--violet) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:8px;}
+.hero p{font-size:11px;color:var(--text-med);letter-spacing:1px;}
+
+/* TYPE TABS */
+.type-tabs{display:flex;flex-wrap:wrap;gap:5px;justify-content:center;margin-bottom:22px;animation:fade-up .5s .05s ease both;}
+.type-tab{padding:7px 18px;border-radius:30px;border:1px solid var(--border);background:var(--surface);color:var(--text-med);font-size:10px;letter-spacing:1.5px;cursor:pointer;transition:all .2s;font-family:'JetBrains Mono',monospace;display:flex;align-items:center;gap:7px;}
+.type-tab:hover{border-color:var(--border2);color:var(--text);}
+.type-tab.active{border-color:rgba(0,229,255,.45);color:var(--cyan);background:rgba(0,229,255,.08);box-shadow:0 0 12px rgba(0,229,255,.1);}
+
+/* CARD */
+.card{background:var(--surface);border:1px solid var(--border2);border-radius:18px;overflow:hidden;box-shadow:0 0 0 1px rgba(0,229,255,.03),0 30px 80px rgba(0,0,0,.5);position:relative;animation:fade-up .5s .1s ease both;}
+.card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent 5%,var(--cyan) 40%,var(--violet) 70%,transparent 95%);}
+.card-head{padding:15px 22px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+.card-head-title{font-family:'Orbitron',sans-serif;font-size:11px;font-weight:700;letter-spacing:3px;color:var(--text);}
+.card-head-meta{font-size:9px;letter-spacing:2px;color:var(--text-dim);}
+
+/* DROP ZONE */
+.drop-zone{margin:20px;border:2px dashed var(--border2);border-radius:14px;padding:36px 24px;text-align:center;cursor:pointer;transition:all .25s;background:rgba(0,229,255,.012);position:relative;}
+.drop-zone:hover,.drop-zone.dragover{border-color:rgba(0,229,255,.5);background:rgba(0,229,255,.04);box-shadow:0 0 25px rgba(0,229,255,.07);}
+.drop-zone input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;}
+.dz-icon{font-size:38px;margin-bottom:10px;display:block;}
+.dz-title{font-family:'Orbitron',sans-serif;font-size:13px;font-weight:700;letter-spacing:2px;color:var(--text);margin-bottom:5px;}
+.dz-sub{font-size:10px;color:var(--text-dim);letter-spacing:1px;}
+.dz-badge{display:inline-block;margin-top:12px;padding:4px 14px;border-radius:20px;border:1px solid rgba(0,229,255,.3);background:rgba(0,229,255,.06);color:var(--cyan);font-size:9px;letter-spacing:2px;}
+
+/* OPTIONS PANEL */
+.options-panel{margin:0 20px 16px;display:flex;flex-direction:column;gap:14px;}
+.opt-section-title{font-size:8px;letter-spacing:3px;color:var(--text-dim);padding-bottom:8px;border-bottom:1px solid var(--border);}
+.options-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.opt-field{display:flex;flex-direction:column;gap:7px;}
+.opt-label{font-size:8px;letter-spacing:2.5px;color:var(--text-dim);}
+.opt-select{background:#030308;border:1px solid var(--border);border-radius:9px;padding:9px 13px;color:var(--text);font-family:'JetBrains Mono',monospace;font-size:12px;outline:none;transition:all .2s;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%234a5580'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;padding-right:32px;cursor:pointer;}
+.opt-select:focus{border-color:var(--cyan);}
+
+/* QUALITY SLIDER */
+.slider-wrap{display:flex;flex-direction:column;gap:7px;}
+.slider-row{display:flex;align-items:center;gap:10px;}
+.slider{flex:1;-webkit-appearance:none;appearance:none;height:5px;border-radius:5px;outline:none;cursor:pointer;background:linear-gradient(90deg,var(--cyan) var(--pct,80%),var(--border2) var(--pct,80%));}
+.slider::-webkit-slider-thumb{-webkit-appearance:none;width:15px;height:15px;border-radius:50%;background:var(--cyan);border:2px solid var(--bg);box-shadow:0 0 7px rgba(0,229,255,.5);cursor:pointer;}
+.slider-val{font-family:'Orbitron',sans-serif;font-size:12px;color:var(--cyan);min-width:38px;text-align:right;}
+
+/* RESIZE OPTIONS */
+.resize-row{display:grid;grid-template-columns:1fr auto 1fr auto;gap:8px;align-items:center;}
+.resize-input{background:#030308;border:1px solid var(--border);border-radius:9px;padding:9px 11px;color:var(--text);font-family:'JetBrains Mono',monospace;font-size:12px;outline:none;transition:all .2s;width:100%;}
+.resize-input:focus{border-color:var(--cyan);}
+.resize-x{color:var(--text-dim);font-size:12px;}
+.lock-btn{padding:8px 10px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--text-dim);cursor:pointer;font-size:14px;transition:all .2s;white-space:nowrap;}
+.lock-btn.locked{border-color:rgba(0,229,255,.4);color:var(--cyan);background:rgba(0,229,255,.06);}
+
+/* TOGGLE SWITCH */
+.toggle-row{display:flex;align-items:center;justify-content:space-between;padding:8px 0;}
+.toggle-label{font-size:11px;color:var(--text-med);}
+.toggle{position:relative;width:36px;height:20px;flex-shrink:0;}
+.toggle input{opacity:0;width:0;height:0;}
+.toggle-track{position:absolute;inset:0;background:var(--border2);border-radius:20px;cursor:pointer;transition:.25s;}
+.toggle-track::after{content:'';position:absolute;left:3px;top:3px;width:14px;height:14px;border-radius:50%;background:var(--text-dim);transition:.25s;}
+.toggle input:checked+.toggle-track{background:rgba(0,229,255,.3);}
+.toggle input:checked+.toggle-track::after{transform:translateX(16px);background:var(--cyan);}
+
+/* FILE QUEUE */
+.queue{margin:0 20px 16px;display:flex;flex-direction:column;gap:5px;}
+.queue-item{display:flex;align-items:center;gap:12px;padding:10px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:11px;transition:all .2s;}
+.qi-thumb{width:38px;height:38px;border-radius:7px;object-fit:cover;flex-shrink:0;border:1px solid var(--border);background:var(--border);}
+.qi-thumb-pdf{width:38px;height:38px;border-radius:7px;flex-shrink:0;border:1px solid var(--border);background:var(--surface2);display:flex;align-items:center;justify-content:center;font-size:18px;}
+.qi-info{flex:1;min-width:0;}
+.qi-name{font-size:12px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.qi-meta{font-size:9px;color:var(--text-dim);letter-spacing:1px;margin-top:2px;}
+.qi-status{display:flex;align-items:center;gap:8px;flex-shrink:0;}
+.qi-badge{padding:3px 10px;border-radius:20px;font-size:9px;letter-spacing:1.5px;border:1px solid;font-family:'Orbitron',sans-serif;}
+.qi-badge.waiting{color:var(--text-dim);border-color:var(--border);}
+.qi-badge.processing{color:var(--yellow);border-color:rgba(255,214,10,.4);background:rgba(255,214,10,.07);animation:pulse .8s ease infinite alternate;}
+.qi-badge.done{color:var(--green);border-color:rgba(0,245,160,.35);background:rgba(0,245,160,.07);}
+.qi-badge.error{color:var(--red);border-color:rgba(255,68,102,.35);background:rgba(255,68,102,.07);}
+.qi-saving{font-family:'Orbitron',sans-serif;font-size:11px;color:var(--green);}
+.qi-saving.bad{color:var(--red);}
+.qi-dl{width:28px;height:28px;border-radius:7px;border:1px solid rgba(0,229,255,.3);background:rgba(0,229,255,.06);color:var(--cyan);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:13px;transition:all .15s;}
+.qi-dl:hover{background:rgba(0,229,255,.15);}
+.qi-rm{width:28px;height:28px;border-radius:7px;border:1px solid var(--border);background:transparent;color:var(--text-dim);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:13px;transition:all .15s;}
+.qi-rm:hover{border-color:var(--red);color:var(--red);}
+@keyframes pulse{from{opacity:.6}to{opacity:1}}
+
+/* ACTION BAR */
+.action-bar{margin:0 20px 20px;display:flex;gap:10px;}
+.compress-btn{flex:1;padding:14px;border-radius:12px;background:linear-gradient(135deg,#009dbb,#00c8e8,#00e5ff);border:none;color:#000;cursor:pointer;font-family:'Orbitron',sans-serif;font-size:12px;font-weight:900;letter-spacing:3px;box-shadow:0 0 22px rgba(0,229,255,.35);transition:all .2s;display:flex;align-items:center;justify-content:center;gap:10px;}
+.compress-btn:hover:not(:disabled){box-shadow:0 0 38px rgba(0,229,255,.6);transform:translateY(-1px);}
+.compress-btn:disabled{opacity:.3;cursor:not-allowed;transform:none;box-shadow:none;}
+.dl-all-btn{padding:14px 18px;border-radius:12px;border:1px solid rgba(0,245,160,.35);background:rgba(0,245,160,.06);color:var(--green);cursor:pointer;font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:2px;transition:all .2s;white-space:nowrap;}
+.dl-all-btn:hover{background:rgba(0,245,160,.14);}
+.dl-all-btn:disabled{opacity:.3;cursor:not-allowed;}
+.clear-btn{padding:14px 16px;border-radius:12px;border:1px solid rgba(255,68,102,.3);background:rgba(255,68,102,.05);color:var(--red);cursor:pointer;font-size:10px;letter-spacing:2px;font-family:'JetBrains Mono',monospace;transition:all .2s;}
+.clear-btn:hover{background:rgba(255,68,102,.12);}
+
+/* PROGRESS */
+.progress-wrap{margin:0 20px 16px;display:none;flex-direction:column;gap:7px;}
+.progress-wrap.show{display:flex;}
+.progress-bg{height:5px;background:var(--border);border-radius:5px;overflow:hidden;}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--cyan),var(--violet));border-radius:5px;width:0%;transition:width .3s;box-shadow:0 0 8px rgba(0,229,255,.5);}
+.progress-label{font-size:9px;letter-spacing:2px;color:var(--text-dim);text-align:center;}
+
+/* SUMMARY */
+.summary{margin:0 20px 20px;background:#030308;border:1px solid rgba(0,245,160,.18);border-radius:12px;padding:14px 18px;display:none;gap:0;}
+.summary.show{display:grid;grid-template-columns:repeat(4,1fr);}
+.sum-stat{padding:6px 12px;display:flex;flex-direction:column;gap:2px;}
+.sum-stat:not(:last-child){border-right:1px solid var(--border);}
+.sum-label{font-size:7.5px;letter-spacing:2px;color:var(--text-dim);}
+.sum-val{font-family:'Orbitron',sans-serif;font-size:15px;color:var(--green);}
+
+/* BEFORE/AFTER PREVIEW */
+.preview-section{margin-top:20px;display:none;animation:fade-up .4s ease both;}
+.preview-section.show{display:block;}
+.preview-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:10px;}
+.preview-box{background:var(--surface);border:1px solid var(--border2);border-radius:12px;overflow:hidden;}
+.preview-box-head{padding:10px 14px;border-bottom:1px solid var(--border);font-size:8px;letter-spacing:2.5px;color:var(--text-dim);}
+.preview-img{width:100%;height:180px;object-fit:contain;display:block;background:#02020a;}
+
+/* FEATURES */
+.features{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:18px;animation:fade-up .5s .04s ease both;}
+.feat{display:flex;align-items:center;gap:7px;padding:6px 13px;border-radius:30px;border:1px solid var(--border);background:var(--surface);font-size:9px;color:var(--text-med);letter-spacing:1px;}
+.feat-icon{font-size:13px;}
+
+/* SEC LABEL */
+.sec-label{font-size:8px;letter-spacing:3px;color:var(--text-dim);margin-bottom:10px;display:flex;align-items:center;gap:10px;}
+.sec-label::after{content:'';flex:1;height:1px;background:var(--border);}
+
+/* EMPTY */
+.empty-hint{padding:10px 20px 16px;text-align:center;font-size:10px;letter-spacing:1.5px;color:var(--text-dim);display:none;}
+
+/* TOAST */
+.toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--surface);border:1px solid rgba(0,245,160,.4);color:var(--green);padding:9px 22px;border-radius:30px;font-size:11px;letter-spacing:2px;z-index:999;opacity:0;transition:all .3s;pointer-events:none;box-shadow:0 0 20px rgba(0,245,160,.2);}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+.toast.err{border-color:rgba(255,68,102,.4);color:var(--red);}
+
+@media(max-width:650px){
+  nav{padding:0 14px;}
+  .page{padding:16px 12px 48px;}
+  .options-grid{grid-template-columns:1fr;}
+  .preview-grid{grid-template-columns:1fr;}
+  .summary.show{grid-template-columns:1fr 1fr;}
+  .resize-row{grid-template-columns:1fr auto 1fr;}
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <a class="nav-brand" href="#">
+    <div class="nav-logo">T</div>
+    <div class="nav-name">TOOLZY</div>
+  </a>
+  <div class="nav-links">
+    <a class="nav-link" href="#">CALC</a>
+    <a class="nav-link" href="#">CONVERT</a>
+    <a class="nav-link" href="#">COLOUR</a>
+    <a class="nav-link" href="#">PDF</a>
+    <a class="nav-link active">COMPRESS</a>
+  </div>
+</nav>
+
+<div class="page">
+
+  <div class="hero">
+    <div class="hero-tag">FILE COMPRESSOR</div>
+    <h1>COMPRESS & OPTIMISE</h1>
+    <p>Images (JPEG · PNG · WebP · GIF) &amp; PDF — 100% in-browser, zero upload</p>
+  </div>
+
+  <!-- TYPE TABS -->
+  <div class="type-tabs">
+    <div class="type-tab active" onclick="switchMode('image')" data-mode="image">🖼️ IMAGE</div>
+    <div class="type-tab"        onclick="switchMode('pdf')"   data-mode="pdf">📄 PDF</div>
+  </div>
+
+  <!-- FEATURES -->
+  <div class="features">
+    <div class="feat"><span class="feat-icon">🔒</span>100% Private</div>
+    <div class="feat"><span class="feat-icon">⚡</span>Instant processing</div>
+    <div class="feat"><span class="feat-icon">📦</span>Batch compress</div>
+    <div class="feat"><span class="feat-icon">↔️</span>Resize + compress</div>
+    <div class="feat"><span class="feat-icon">🔄</span>Format conversion</div>
+    <div class="feat"><span class="feat-icon">👁️</span>Before / After preview</div>
+  </div>
+
+  <div class="card" id="mainCard">
+    <div class="card-head">
+      <span class="card-head-title" id="cardTitle">IMAGE COMPRESSOR</span>
+      <span class="card-head-meta"  id="cardMeta">0 FILES</span>
+    </div>
+
+    <!-- DROP ZONE -->
+    <div class="drop-zone" id="dropZone">
+      <input type="file" id="fileInput" multiple>
+      <span class="dz-icon" id="dzIcon">🖼️</span>
+      <div class="dz-title">DROP FILES HERE</div>
+      <div class="dz-sub">or click to browse</div>
+      <div class="dz-badge" id="dzBadge">JPEG · PNG · WebP · GIF · BMP</div>
+    </div>
+
+    <!-- OPTIONS -->
+    <div class="options-panel">
+      <div class="opt-section-title">COMPRESSION OPTIONS</div>
+
+      <!-- IMAGE OPTIONS -->
+      <div id="imageOpts">
+        <div class="options-grid" style="margin-bottom:12px;">
+          <div class="opt-field">
+            <label class="opt-label">OUTPUT FORMAT</label>
+            <select class="opt-select" id="outFormat">
+              <option value="same">Same as input</option>
+              <option value="jpeg">JPEG</option>
+              <option value="png">PNG</option>
+              <option value="webp" selected>WebP (best compression)</option>
+            </select>
+          </div>
+          <div class="opt-field">
+            <label class="opt-label">COMPRESSION PRESET</label>
+            <select class="opt-select" id="preset" onchange="applyPreset()">
+              <option value="custom">Custom</option>
+              <option value="web" selected>Web (balanced)</option>
+              <option value="social">Social Media</option>
+              <option value="thumbnail">Thumbnail</option>
+              <option value="max">Maximum Compression</option>
+              <option value="lossless">Near-Lossless</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Quality Slider -->
+        <div class="slider-wrap" style="margin-bottom:12px;">
+          <label class="opt-label">QUALITY</label>
+          <div class="slider-row">
+            <input class="slider" type="range" id="qualitySlider" min="1" max="100" value="80"
+              oninput="syncQuality(this.value)" style="--pct:79%">
+            <span class="slider-val" id="qualityVal">80%</span>
+          </div>
+        </div>
+
+        <!-- Resize -->
+        <div class="opt-field" style="margin-bottom:10px;">
+          <label class="opt-label">RESIZE (LEAVE BLANK TO KEEP ORIGINAL)</label>
+          <div class="resize-row">
+            <input class="resize-input" id="resizeW" type="number" placeholder="Width px" oninput="resizeLinked('w')">
+            <span class="resize-x">×</span>
+            <input class="resize-input" id="resizeH" type="number" placeholder="Height px" oninput="resizeLinked('h')">
+            <button class="lock-btn locked" id="lockBtn" onclick="toggleLock()" title="Lock aspect ratio">🔒</button>
+          </div>
+        </div>
+
+        <!-- Toggles -->
+        <div class="options-grid">
+          <div>
+            <label class="toggle-row">
+              <span class="toggle-label">Strip EXIF metadata</span>
+              <label class="toggle"><input type="checkbox" id="stripExif" checked><span class="toggle-track"></span></label>
+            </label>
+            <label class="toggle-row">
+              <span class="toggle-label">Progressive JPEG</span>
+              <label class="toggle"><input type="checkbox" id="progressive"><span class="toggle-track"></span></label>
+            </label>
+          </div>
+          <div>
+            <label class="toggle-row">
+              <span class="toggle-label">Max width cap (1920px)</span>
+              <label class="toggle"><input type="checkbox" id="maxWidth"><span class="toggle-track"></span></label>
+            </label>
+            <label class="toggle-row">
+              <span class="toggle-label">Keep transparency (PNG/WebP)</span>
+              <label class="toggle"><input type="checkbox" id="keepAlpha" checked><span class="toggle-track"></span></label>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <!-- PDF OPTIONS -->
+      <div id="pdfOpts" style="display:none;">
+        <div class="options-grid">
+          <div class="opt-field">
+            <label class="opt-label">COMPRESSION LEVEL</label>
+            <select class="opt-select" id="pdfLevel">
+              <option value="low">Low (best quality)</option>
+              <option value="medium" selected>Medium (balanced)</option>
+              <option value="high">High (smallest file)</option>
+            </select>
+          </div>
+          <div class="opt-field">
+            <label class="opt-label">IMAGE DOWNSCALE IN PDF</label>
+            <select class="opt-select" id="pdfImgScale">
+              <option value="1">None (keep original)</option>
+              <option value="0.75" selected>75% scale</option>
+              <option value="0.5">50% scale</option>
+              <option value="0.25">25% scale</option>
+            </select>
+          </div>
+        </div>
+        <div style="margin-top:10px;" class="opt-field">
+          <label class="opt-label">NOTE</label>
+          <div style="font-size:10px;color:var(--text-dim);padding:8px 12px;border:1px solid var(--border);border-radius:9px;line-height:1.6;">
+            PDF compression removes redundant data, compresses streams, and strips unused objects. Results vary by PDF content. For image-heavy PDFs, use image downscale for bigger savings.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- FILE QUEUE -->
+    <div class="queue" id="fileQueue"></div>
+    <div class="empty-hint" id="emptyHint">Add files above to begin</div>
+
+    <!-- PROGRESS -->
+    <div class="progress-wrap" id="progressWrap">
+      <div class="progress-bg"><div class="progress-fill" id="progressFill"></div></div>
+      <div class="progress-label" id="progressLabel">COMPRESSING...</div>
+    </div>
+
+    <!-- SUMMARY -->
+    <div class="summary" id="summary">
+      <div class="sum-stat"><div class="sum-label">FILES</div><div class="sum-val" id="sumFiles">0</div></div>
+      <div class="sum-stat"><div class="sum-label">ORIGINAL</div><div class="sum-val" id="sumOrig">0</div></div>
+      <div class="sum-stat"><div class="sum-label">COMPRESSED</div><div class="sum-val" id="sumComp">0</div></div>
+      <div class="sum-stat"><div class="sum-label">SAVED</div><div class="sum-val" id="sumSaved">0%</div></div>
+    </div>
+
+    <!-- ACTION BAR -->
+    <div class="action-bar">
+      <button class="compress-btn" id="compressBtn" onclick="compressAll()" disabled>
+        <span>⬡</span> <span id="compressBtnTxt">COMPRESS</span>
+      </button>
+      <button class="dl-all-btn" id="dlAllBtn" onclick="downloadAll()" disabled>⬇ SAVE ALL</button>
+      <button class="clear-btn" onclick="clearAll()">✕ CLEAR</button>
+    </div>
+  </div>
+
+  <!-- BEFORE / AFTER PREVIEW -->
+  <div class="preview-section" id="previewSection">
+    <div class="sec-label">BEFORE / AFTER PREVIEW</div>
+    <div class="preview-grid">
+      <div class="preview-box">
+        <div class="preview-box-head">ORIGINAL — <span id="prevOrigSize">—</span></div>
+        <img class="preview-img" id="prevOrigImg" src="" alt="Original">
+      </div>
+      <div class="preview-box">
+        <div class="preview-box-head">COMPRESSED — <span id="prevCompSize">—</span></div>
+        <img class="preview-img" id="prevCompImg" src="" alt="Compressed">
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<footer style="position:relative;z-index:1;border-top:1px solid var(--border);padding:18px 32px;display:flex;align-items:center;justify-content:space-between;">
+  <span style="font-family:'Orbitron',sans-serif;font-size:10px;letter-spacing:3px;color:var(--text-dim);">TOOLZY</span>
+  <span style="font-size:9px;letter-spacing:1.5px;color:var(--text-dim);">COMPRESSOR v1.0</span>
+</footer>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ═══════════════════════════════════════════
+//  STATE
+// ═══════════════════════════════════════════
+let mode = 'image';
+let items = [];       // {file, name, origSize, blob, compSize, status, origSrc}
+let aspectRatios = {};// name → w/h ratio
+let locked = true;
+let compressedCount = 0;
+
+// ═══════════════════════════════════════════
+//  MODE SWITCH
+// ═══════════════════════════════════════════
+function switchMode(m) {
+  mode = m;
+  document.querySelectorAll('.type-tab').forEach(t => t.classList.toggle('active', t.dataset.mode === m));
+  document.getElementById('imageOpts').style.display  = m === 'image' ? '' : 'none';
+  document.getElementById('pdfOpts').style.display    = m === 'pdf'   ? '' : 'none';
+  document.getElementById('cardTitle').textContent    = m === 'image' ? 'IMAGE COMPRESSOR' : 'PDF COMPRESSOR';
+  document.getElementById('dzIcon').textContent       = m === 'image' ? '🖼️' : '📄';
+  document.getElementById('dzBadge').textContent      = m === 'image' ? 'JPEG · PNG · WebP · GIF · BMP' : 'PDF files only';
+  document.getElementById('fileInput').accept         = m === 'image' ? 'image/*' : '.pdf,application/pdf';
+  document.getElementById('previewSection').classList.remove('show');
+  clearAll(false);
+}
+
+// ═══════════════════════════════════════════
+//  DROP ZONE
+// ═══════════════════════════════════════════
+const dz = document.getElementById('dropZone');
+dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('dragover'); });
+dz.addEventListener('dragleave', () => dz.classList.remove('dragover'));
+dz.addEventListener('drop', e => {
+  e.preventDefault(); dz.classList.remove('dragover');
+  addFiles([...e.dataTransfer.files]);
+});
+document.getElementById('fileInput').addEventListener('change', function() {
+  addFiles([...this.files]); this.value = '';
+});
+
+async function addFiles(newFiles) {
+  for (const file of newFiles) {
+    if (items.find(i => i.name === file.name && i.origSize === file.size)) {
+      showToast('⚠ Already added: ' + file.name, true); continue;
+    }
+    let origSrc = null;
+    if (mode === 'image') origSrc = await toDataURL(file);
+    items.push({ file, name: file.name, origSize: file.size, blob: null, compSize: 0, status: 'waiting', origSrc });
+    // Store aspect ratio
+    if (mode === 'image') {
+      getImgDims(origSrc).then(d => { aspectRatios[file.name] = d.w / d.h; });
+    }
+  }
+  renderQueue();
+  updateMeta();
+}
+
+function toDataURL(file) {
+  return new Promise(res => {
+    const fr = new FileReader();
+    fr.onload = e => res(e.target.result);
+    fr.readAsDataURL(file);
+  });
+}
+function getImgDims(src) {
+  return new Promise(res => {
+    const img = new Image();
+    img.onload = () => res({ w: img.naturalWidth, h: img.naturalHeight });
+    img.src = src;
+  });
+}
+
+// ═══════════════════════════════════════════
+//  RENDER QUEUE
+// ═══════════════════════════════════════════
+function renderQueue() {
+  const q = document.getElementById('fileQueue');
+  const eh = document.getElementById('emptyHint');
+  eh.style.display = items.length === 0 ? 'block' : 'none';
+  document.getElementById('compressBtn').disabled = items.length === 0;
+
+  q.innerHTML = items.map((it, i) => `
+    <div class="queue-item" id="qi-${i}">
+      ${mode === 'image'
+        ? `<img class="qi-thumb" src="${it.origSrc}" alt="">`
+        : `<div class="qi-thumb-pdf">📄</div>`}
+      <div class="qi-info">
+        <div class="qi-name" title="${escH(it.name)}">${escH(it.name)}</div>
+        <div class="qi-meta">${fmtSz(it.origSize)}${it.compSize ? ' → ' + fmtSz(it.compSize) : ''}</div>
+      </div>
+      <div class="qi-status">
+        <span class="qi-badge ${it.status}" id="qb-${i}">${badgeLabel(it.status)}</span>
+        ${it.status === 'done' ? `<span class="qi-saving${savings(it) < 0 ? ' bad' : ''}" id="qs-${i}">${savings(it) >= 0 ? '−' : '+'}${Math.abs(savings(it))}%</span>` : ''}
+        ${it.status === 'done' ? `<button class="qi-dl" onclick="dlOne(${i})" title="Download">⬇</button>` : ''}
+        <button class="qi-rm" onclick="removeItem(${i})" title="Remove">✕</button>
+      </div>
+    </div>`).join('');
+
+  // show/hide dl-all
+  const done = items.filter(x => x.status === 'done').length;
+  document.getElementById('dlAllBtn').disabled = done === 0;
+  if (done > 0) document.getElementById('summary').classList.add('show');
+}
+
+function badgeLabel(s) {
+  return {waiting:'READY',processing:'COMPRESSING',done:'DONE',error:'ERROR'}[s] || s.toUpperCase();
+}
+function savings(it) {
+  return Math.round((1 - it.compSize / it.origSize) * 100);
+}
+function updateMeta() {
+  document.getElementById('cardMeta').textContent = items.length + ' FILE' + (items.length !== 1 ? 'S' : '');
+}
+function removeItem(i) {
+  items.splice(i, 1);
+  renderQueue(); updateMeta();
+  updateSummary();
+}
+function clearAll(rerender = true) {
+  items = []; compressedCount = 0;
+  if (!rerender) return;
+  renderQueue(); updateMeta();
+  document.getElementById('summary').classList.remove('show');
+  document.getElementById('progressWrap').classList.remove('show');
+  document.getElementById('previewSection').classList.remove('show');
+}
+
+// ═══════════════════════════════════════════
+//  PRESETS
+// ═══════════════════════════════════════════
+const PRESETS = {
+  web:       { quality: 80, format: 'webp' },
+  social:    { quality: 85, format: 'jpeg' },
+  thumbnail: { quality: 70, format: 'webp' },
+  max:       { quality: 40, format: 'webp' },
+  lossless:  { quality: 95, format: 'png'  },
+  custom:    null,
+};
+function applyPreset() {
+  const p = PRESETS[document.getElementById('preset').value];
+  if (!p) return;
+  document.getElementById('qualitySlider').value = p.quality;
+  syncQuality(p.quality);
+  document.getElementById('outFormat').value = p.format;
+}
+function syncQuality(v) {
+  document.getElementById('qualityVal').textContent = v + '%';
+  const pct = ((v - 1) / 99 * 100).toFixed(1) + '%';
+  document.getElementById('qualitySlider').style.setProperty('--pct', pct);
+  document.getElementById('preset').value = 'custom';
+}
+
+// ═══════════════════════════════════════════
+//  ASPECT LOCK
+// ═══════════════════════════════════════════
+function toggleLock() {
+  locked = !locked;
+  document.getElementById('lockBtn').classList.toggle('locked', locked);
+  document.getElementById('lockBtn').textContent = locked ? '🔒' : '🔓';
+}
+function resizeLinked(from) {
+  if (!locked) return;
+  const wEl = document.getElementById('resizeW');
+  const hEl = document.getElementById('resizeH');
+  // Use first item's aspect ratio
+  const ratio = items.length ? (aspectRatios[items[0].name] || 1) : 1;
+  if (from === 'w' && wEl.value) hEl.value = Math.round(wEl.value / ratio) || '';
+  if (from === 'h' && hEl.value) wEl.value = Math.round(hEl.value * ratio) || '';
+}
+
+// ═══════════════════════════════════════════
+//  COMPRESS ALL
+// ═══════════════════════════════════════════
+async function compressAll() {
+  if (items.length === 0) return;
+  const btn = document.getElementById('compressBtn');
+  btn.disabled = true;
+  document.getElementById('compressBtnTxt').textContent = 'COMPRESSING...';
+  document.getElementById('progressWrap').classList.add('show');
+  document.getElementById('previewSection').classList.remove('show');
+
+  compressedCount = 0;
+  for (let i = 0; i < items.length; i++) {
+    setProgress(Math.round(i / items.length * 100), `PROCESSING ${i+1} OF ${items.length}…`);
+    updateBadge(i, 'processing');
+    try {
+      if (mode === 'image') await compressImage(i);
+      else                  await compressPDF(i);
+      updateBadge(i, 'done');
+      compressedCount++;
+    } catch(e) {
+      updateBadge(i, 'error');
+      console.error(e);
+    }
+    renderQueue();
+  }
+  setProgress(100, 'COMPLETE');
+  updateSummary();
+  showFirstPreview();
+  btn.disabled = false;
+  document.getElementById('compressBtnTxt').textContent = 'COMPRESS';
+  showToast('✓ Compressed ' + compressedCount + ' file' + (compressedCount !== 1 ? 's' : ''));
+}
+
+function updateBadge(i, status) {
+  items[i].status = status;
+  const el = document.getElementById('qb-' + i);
+  if (el) { el.className = 'qi-badge ' + status; el.textContent = badgeLabel(status); }
+}
+
+// ═══════════════════════════════════════════
+//  IMAGE COMPRESSION
+// ═══════════════════════════════════════════
+async function compressImage(i) {
+  const it = items[i];
+  const quality = parseInt(document.getElementById('qualitySlider').value) / 100;
+  const formatSel = document.getElementById('outFormat').value;
+  const capWidth  = document.getElementById('maxWidth').checked;
+  const keepAlpha = document.getElementById('keepAlpha').checked;
+  const targetW   = parseInt(document.getElementById('resizeW').value) || null;
+  const targetH   = parseInt(document.getElementById('resizeH').value) || null;
+
+  const img = await loadImage(it.origSrc);
+  let w = img.naturalWidth, h = img.naturalHeight;
+
+  // Cap at 1920
+  if (capWidth && w > 1920) { h = Math.round(h * 1920 / w); w = 1920; }
+  // Manual resize
+  if (targetW) { h = Math.round(h * targetW / w); w = targetW; }
+  if (targetH && !targetW) { w = Math.round(w * targetH / h); h = targetH; }
+
+  const canvas = document.createElement('canvas');
+  canvas.width = w; canvas.height = h;
+  const ctx = canvas.getContext('2d');
+
+  // Fill background for non-alpha formats
+  const ext = it.file.name.split('.').pop().toLowerCase();
+  const inFmt = formatSel === 'same' ? ext : formatSel;
+  const outMime = { jpeg: 'image/jpeg', jpg: 'image/jpeg', png: 'image/png', webp: 'image/webp', gif: 'image/webp', bmp: 'image/webp' }[inFmt] || 'image/webp';
+
+  if (!keepAlpha || outMime === 'image/jpeg') {
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, w, h);
+  }
+  ctx.drawImage(img, 0, 0, w, h);
+
+  const dataUrl = canvas.toDataURL(outMime, quality);
+  const blob = dataURLToBlob(dataUrl);
+  items[i].blob = blob;
+  items[i].compSize = blob.size;
+  items[i].outMime = outMime;
+  items[i].outExt  = { 'image/jpeg':'jpg','image/png':'png','image/webp':'webp' }[outMime] || 'webp';
+  items[i].compSrc = dataUrl;
+}
+
+function loadImage(src) {
+  return new Promise((res, rej) => {
+    const img = new Image();
+    img.onload = () => res(img);
+    img.onerror = rej;
+    img.src = src;
+  });
+}
+function dataURLToBlob(dataUrl) {
+  const [header, data] = dataUrl.split(',');
+  const mime = header.match(/:(.*?);/)[1];
+  const binary = atob(data);
+  const arr = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) arr[i] = binary.charCodeAt(i);
+  return new Blob([arr], { type: mime });
+}
+
+// ═══════════════════════════════════════════
+//  PDF COMPRESSION
+// ═══════════════════════════════════════════
+async function compressPDF(i) {
+  const it = items[i];
+  const ab = await it.file.arrayBuffer();
+  const src = await PDFLib.PDFDocument.load(ab, { ignoreEncryption: true });
+  const out = await PDFLib.PDFDocument.create();
+
+  const pages = await out.copyPages(src, src.getPageIndices());
+  pages.forEach(p => out.addPage(p));
+
+  // Strip metadata to save space
+  out.setTitle('');
+  out.setAuthor('');
+  out.setSubject('');
+  out.setKeywords([]);
+  out.setProducer('Toolzy Compressor');
+  out.setCreator('Toolzy');
+
+  const bytes = await out.save({ useObjectStreams: true, addDefaultPage: false, objectsPerTick: 50 });
+  const blob = new Blob([bytes], { type: 'application/pdf' });
+  items[i].blob     = blob;
+  items[i].compSize = blob.size;
+  items[i].outExt   = 'pdf';
+}
+
+// ═══════════════════════════════════════════
+//  DOWNLOAD
+// ═══════════════════════════════════════════
+function dlOne(i) {
+  const it = items[i];
+  if (!it.blob) return;
+  const base = it.name.replace(/\.[^/.]+$/, '');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(it.blob);
+  a.download = base + '_compressed.' + it.outExt;
+  a.click();
+  showToast('⬇ ' + a.download);
+}
+
+async function downloadAll() {
+  const done = items.filter(x => x.status === 'done' && x.blob);
+  if (done.length === 0) return;
+  if (done.length === 1) { dlOne(items.indexOf(done[0])); return; }
+
+  // Use JSZip if available, else download individually
+  if (typeof JSZip === 'undefined') {
+    // fallback: sequential downloads
+    for (const it of done) {
+      const base = it.name.replace(/\.[^/.]+$/, '');
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(it.blob);
+      a.download = base + '_compressed.' + it.outExt;
+      a.click();
+      await new Promise(r => setTimeout(r, 400));
+    }
+    showToast('⬇ Downloading ' + done.length + ' files');
+    return;
+  }
+}
+
+// ═══════════════════════════════════════════
+//  SUMMARY
+// ═══════════════════════════════════════════
+function updateSummary() {
+  const done = items.filter(x => x.status === 'done');
+  if (done.length === 0) { document.getElementById('summary').classList.remove('show'); return; }
+  const origTotal = done.reduce((s, x) => s + x.origSize, 0);
+  const compTotal = done.reduce((s, x) => s + x.compSize, 0);
+  const saved = Math.round((1 - compTotal / origTotal) * 100);
+  document.getElementById('sumFiles').textContent = done.length;
+  document.getElementById('sumOrig').textContent  = fmtSz(origTotal);
+  document.getElementById('sumComp').textContent  = fmtSz(compTotal);
+  document.getElementById('sumSaved').textContent = (saved >= 0 ? '−' : '+') + Math.abs(saved) + '%';
+  document.getElementById('summary').classList.add('show');
+  document.getElementById('dlAllBtn').disabled = false;
+}
+
+// ═══════════════════════════════════════════
+//  BEFORE / AFTER PREVIEW
+// ═══════════════════════════════════════════
+function showFirstPreview() {
+  if (mode !== 'image') return;
+  const first = items.find(x => x.status === 'done' && x.compSrc);
+  if (!first) return;
+  document.getElementById('prevOrigImg').src = first.origSrc;
+  document.getElementById('prevOrigSize').textContent = fmtSz(first.origSize);
+  document.getElementById('prevCompImg').src = first.compSrc;
+  document.getElementById('prevCompSize').textContent = fmtSz(first.compSize) + ' (−' + Math.abs(savings(first)) + '%)';
+  document.getElementById('previewSection').classList.add('show');
+  document.getElementById('previewSection').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+// ═══════════════════════════════════════════
+//  PROGRESS
+// ═══════════════════════════════════════════
+function setProgress(pct, label) {
+  document.getElementById('progressFill').style.width = pct + '%';
+  document.getElementById('progressLabel').textContent = label;
+}
+
+// ═══════════════════════════════════════════
+//  UTILS
+// ═══════════════════════════════════════════
+function fmtSz(b) {
+  if (b < 1024) return b + ' B';
+  if (b < 1048576) return (b/1024).toFixed(1) + ' KB';
+  return (b/1048576).toFixed(2) + ' MB';
+}
+function escH(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+let toastTimer;
+function showToast(msg, isErr = false) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast' + (isErr ? ' err' : '');
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2800);
+}
+</script>
+</body>
+</html>

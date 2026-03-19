@@ -1,0 +1,773 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover"/>
+<title>PDF Splitter — Toolzy</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
+<style>
+/* ── TOKENS ─────────────────────────────────────── */
+:root{
+  --bg:#07080f;--card:#111422;--card-h:#161929;
+  --border:#1c1f35;
+  --a1:#00e5ff;--a2:#ff3cac;--a3:#f5a623;--a4:#43e97b;--a5:#a78bfa;--a6:#ff6b35;
+  --text:#dde2ff;--muted:#4a5070;--muted2:#6a7090;
+  --fh:'Syne',sans-serif;--fb:'DM Sans',sans-serif;--r:16px;
+  --safe-b:env(safe-area-inset-bottom,0px);
+  --safe-l:env(safe-area-inset-left,0px);
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+html{scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--text);font-family:var(--fb);overflow-x:hidden;min-height:100vh;}
+
+/* ── GRID BG ────────────────────────────────────── */
+body::before{content:'';position:fixed;inset:0;
+  background-image:linear-gradient(rgba(0,229,255,.025) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(0,229,255,.025) 1px,transparent 1px);
+  background-size:56px 56px;pointer-events:none;z-index:0;}
+.blob{position:fixed;border-radius:50%;filter:blur(130px);pointer-events:none;z-index:0;}
+.b1{width:min(700px,160vw);height:min(700px,160vw);background:#00e5ff;opacity:.07;
+  top:-250px;left:-250px;animation:bd 16s ease-in-out infinite alternate;}
+.b2{width:min(600px,140vw);height:min(600px,140vw);background:#ff6b35;opacity:.07;
+  bottom:-200px;right:-200px;animation:bd 20s ease-in-out infinite alternate-reverse;}
+.b3{width:min(400px,90vw);height:min(400px,90vw);background:#a78bfa;opacity:.05;
+  top:40%;left:40%;animation:bd 12s ease-in-out infinite alternate;}
+@keyframes bd{from{transform:translate(0,0) scale(1);}to{transform:translate(40px,30px) scale(1.12);}}
+
+/* ── NAV ────────────────────────────────────────── */
+nav{position:sticky;top:0;z-index:200;display:flex;align-items:center;
+  justify-content:space-between;
+  padding:0 clamp(14px,4vw,40px);
+  padding-left:max(clamp(14px,4vw,40px), calc(clamp(14px,4vw,40px) + var(--safe-l)));
+  height:56px;background:rgba(7,8,15,.92);
+  backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+  border-bottom:1px solid var(--border);}
+.nav-logo{font-family:var(--fh);font-size:clamp(1.15rem,4vw,1.4rem);font-weight:800;letter-spacing:-1px;
+  background:linear-gradient(120deg,#00e5ff,#a78bfa 50%,#ff3cac);
+  -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;
+  text-decoration:none;flex-shrink:0;}
+.nav-right{display:flex;align-items:center;gap:8px;flex-shrink:0;}
+.nav-badge{font-size:.62rem;font-weight:600;letter-spacing:.05em;text-transform:uppercase;
+  background:#ff6b3520;color:#ff6b35;border:1px solid #ff6b3530;
+  padding:3px 9px;border-radius:100px;white-space:nowrap;}
+.nav-back{display:flex;align-items:center;gap:5px;color:var(--muted2);text-decoration:none;
+  font-size:.78rem;font-weight:500;border:1px solid var(--border);
+  padding:6px 12px;border-radius:100px;transition:all .2s;white-space:nowrap;}
+.nav-back:hover,.nav-back:active{color:var(--text);border-color:var(--a6);}
+.nav-back svg{width:13px;height:13px;flex-shrink:0;}
+.nav-back-label{display:none;}
+@media(min-width:400px){.nav-back-label{display:inline;}}
+
+/* ── HERO ───────────────────────────────────────── */
+.hero{position:relative;z-index:1;
+  padding:clamp(24px,6vw,52px) clamp(14px,4vw,40px) clamp(20px,4vw,40px);
+  max-width:1000px;margin:0 auto;}
+.tool-badge{display:inline-flex;align-items:center;gap:8px;background:#ffffff06;
+  border:1px solid var(--border);color:var(--muted2);font-size:.68rem;letter-spacing:.08em;
+  text-transform:uppercase;padding:5px 13px;border-radius:100px;margin-bottom:18px;}
+.hero-icon{font-size:clamp(1.8rem,5vw,2.4rem);display:block;margin-bottom:12px;
+  filter:drop-shadow(0 0 20px #ff6b3560);}
+.hero h1{font-family:var(--fh);font-size:clamp(1.75rem,6.5vw,3.4rem);font-weight:800;
+  letter-spacing:-2px;line-height:1.1;margin-bottom:10px;
+  background:linear-gradient(135deg,#ff6b35 0%,#f5a623 50%,#ff3cac 100%);
+  -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;}
+.hero p{font-size:clamp(.82rem,2.5vw,.95rem);color:var(--muted2);
+  max-width:500px;line-height:1.7;font-weight:300;}
+
+/* ── MAIN WRAP ──────────────────────────────────── */
+.main-wrap{position:relative;z-index:1;max-width:1000px;margin:0 auto;
+  padding:0 clamp(12px,4vw,40px) calc(clamp(40px,8vw,80px) + var(--safe-b));}
+
+/* ── SECTION CARD ───────────────────────────────── */
+.section-card{background:var(--card);border:1px solid var(--border);
+  border-radius:clamp(14px,3vw,20px);
+  padding:clamp(16px,4vw,28px);margin-top:18px;
+  opacity:0;transform:translateY(10px);
+  transition:opacity .4s ease,transform .4s ease;pointer-events:none;}
+.section-card.active{opacity:1;transform:translateY(0);pointer-events:all;}
+.sc-header{display:flex;align-items:center;gap:10px;margin-bottom:18px;flex-wrap:wrap;}
+.sc-num{width:27px;height:27px;min-width:27px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:.7rem;font-weight:700;font-family:var(--fh);
+  background:linear-gradient(135deg,#ff6b35,#f5a623);color:#07080f;}
+.sc-title{font-family:var(--fh);font-size:clamp(.86rem,2.5vw,1rem);font-weight:700;}
+.sc-sub{font-size:.72rem;color:var(--muted2);margin-left:auto;}
+
+/* ── UPLOAD ZONE ────────────────────────────────── */
+.upload-zone{border:2px dashed var(--border);border-radius:clamp(14px,3vw,20px);
+  padding:clamp(28px,8vw,52px) clamp(16px,5vw,40px);
+  text-align:center;cursor:pointer;transition:all .3s;position:relative;overflow:hidden;}
+.upload-zone::before{content:'';position:absolute;inset:0;
+  background:radial-gradient(circle at 50% 50%,#ff6b3508,transparent 70%);
+  opacity:0;transition:opacity .3s;}
+.upload-zone:hover,.upload-zone.drag-over{border-color:#ff6b3560;background:var(--card-h);}
+.upload-zone:hover::before,.upload-zone.drag-over::before{opacity:1;}
+.upload-zone.drag-over{border-color:#ff6b35;box-shadow:0 0 0 3px #ff6b3520;}
+.upload-icon{font-size:clamp(2rem,8vw,3rem);margin-bottom:12px;display:block;
+  filter:drop-shadow(0 0 16px #ff6b3540);animation:float 3s ease-in-out infinite;}
+@keyframes float{0%,100%{transform:translateY(0);}50%{transform:translateY(-8px);}}
+.upload-title{font-family:var(--fh);font-size:clamp(.95rem,3vw,1.2rem);font-weight:700;margin-bottom:6px;}
+.upload-sub{font-size:.8rem;color:var(--muted2);margin-bottom:20px;}
+.btn-upload{background:linear-gradient(135deg,#ff6b35,#f5a623);border:none;color:#07080f;
+  font-family:var(--fb);font-size:.88rem;font-weight:700;
+  padding:13px 28px;border-radius:100px;cursor:pointer;transition:all .25s;
+  letter-spacing:.02em;min-height:48px;touch-action:manipulation;}
+.btn-upload:hover{opacity:.85;transform:translateY(-1px);box-shadow:0 8px 24px #ff6b3540;}
+.btn-upload:active{transform:scale(.97);}
+.upload-hint{margin-top:12px;font-size:.7rem;color:var(--muted);line-height:1.6;}
+#fileInput{display:none;}
+
+/* ── FILE INFO CARD ─────────────────────────────── */
+.file-info-card{display:none;background:var(--card);border:1px solid var(--border);
+  border-radius:var(--r);
+  padding:clamp(12px,3vw,20px) clamp(14px,3.5vw,24px);
+  margin-top:14px;flex-direction:row;align-items:center;gap:12px;flex-wrap:wrap;}
+.file-info-card.show{display:flex;}
+.fi-icon{width:44px;height:44px;min-width:44px;background:#ff6b3520;
+  border:1px solid #ff6b3530;border-radius:12px;
+  display:flex;align-items:center;justify-content:center;font-size:1.3rem;}
+.fi-details{flex:1;min-width:0;}
+.fi-name{font-family:var(--fh);font-size:.84rem;font-weight:700;margin-bottom:3px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.fi-meta{font-size:.7rem;color:var(--muted2);}
+.fi-meta span{color:var(--a1);}
+.btn-clear{background:transparent;border:1px solid var(--border);color:var(--muted2);
+  font-family:var(--fb);font-size:.75rem;padding:7px 13px;border-radius:100px;cursor:pointer;
+  transition:all .2s;white-space:nowrap;min-height:36px;touch-action:manipulation;}
+.btn-clear:hover,.btn-clear:active{border-color:#ff3cac60;color:#ff3cac;}
+
+/* ── MODE TABS ──────────────────────────────────── */
+.mode-tabs{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:20px;}
+@media(min-width:520px){.mode-tabs{grid-template-columns:repeat(4,1fr);}}
+.mode-tab{padding:10px 8px;border-radius:12px;border:1px solid var(--border);background:transparent;
+  color:var(--muted2);font-family:var(--fb);font-size:clamp(.72rem,2vw,.82rem);font-weight:500;
+  cursor:pointer;transition:all .22s;
+  display:flex;align-items:center;justify-content:center;gap:6px;
+  min-height:48px;line-height:1.3;text-align:center;touch-action:manipulation;}
+.mode-tab:hover,.mode-tab:active{border-color:#ff6b3540;color:var(--text);}
+.mode-tab.active{border-color:#ff6b35;color:#ff6b35;background:#ff6b3512;}
+.tab-icon{font-size:.9rem;flex-shrink:0;}
+
+/* ── MODE CONTENT ───────────────────────────────── */
+.mode-content{display:none;}
+.mode-content.active{display:block;}
+
+/* ── RANGE INPUT ────────────────────────────────── */
+.input-row{display:grid;grid-template-columns:1fr 1fr;
+  align-items:end;gap:10px;margin-bottom:12px;}
+@media(min-width:400px){
+  .input-row{grid-template-columns:1fr auto 1fr auto;}
+  .inp-sep{display:flex;}
+}
+.inp-sep{display:none;align-items:center;padding-bottom:11px;
+  font-size:1rem;color:var(--muted);flex-shrink:0;}
+.remove-row-btn{width:40px;height:40px;min-width:40px;border-radius:50%;
+  background:transparent;border:1px solid var(--border);color:var(--muted);
+  font-size:1.1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;
+  transition:all .2s;align-self:end;touch-action:manipulation;}
+.remove-row-btn:hover,.remove-row-btn:active{border-color:#ff3cac50;color:#ff3cac;}
+/* on very small screens: remove button spans column 2, row 2 */
+@media(max-width:399px){
+  .input-row{grid-template-columns:1fr 1fr;}
+  .remove-row-btn{grid-column:2;justify-self:end;margin-top:-4px;}
+}
+.input-group{display:flex;flex-direction:column;gap:6px;min-width:0;}
+.input-label{font-size:.66rem;color:var(--muted2);letter-spacing:.05em;text-transform:uppercase;}
+.inp{background:#0c0e1a;border:1px solid var(--border);border-radius:10px;
+  color:var(--text);font-family:var(--fb);
+  font-size:1rem;/* 1rem prevents iOS auto-zoom on focus */
+  padding:11px 13px;outline:none;width:100%;
+  transition:border-color .2s,box-shadow .2s;
+  -webkit-appearance:none;appearance:none;}
+.inp:focus{border-color:#ff6b3550;box-shadow:0 0 0 3px #ff6b3510;}
+.btn-add-range{background:transparent;border:1px dashed var(--border);color:var(--muted2);
+  padding:10px 18px;border-radius:100px;cursor:pointer;font-family:var(--fb);font-size:.8rem;
+  transition:all .2s;margin-top:6px;min-height:42px;width:100%;touch-action:manipulation;}
+.btn-add-range:hover,.btn-add-range:active{border-color:#ff6b3560;color:var(--text);}
+
+/* ── PAGE GRID (Pick) ───────────────────────────── */
+.sel-actions{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;}
+.sa-btn{padding:8px 14px;border-radius:100px;border:1px solid var(--border);background:transparent;
+  color:var(--muted2);font-family:var(--fb);font-size:.75rem;cursor:pointer;
+  transition:all .2s;min-height:36px;touch-action:manipulation;}
+.sa-btn:hover,.sa-btn:active{border-color:#ff6b3540;color:var(--text);}
+.page-grid{display:flex;flex-wrap:wrap;gap:8px;max-height:220px;overflow-y:auto;
+  padding:4px 2px;margin-bottom:6px;}
+.page-grid::-webkit-scrollbar{width:4px;}
+.page-grid::-webkit-scrollbar-track{background:transparent;}
+.page-grid::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
+.pg-btn{width:46px;height:46px;border-radius:10px;border:1px solid var(--border);background:transparent;
+  color:var(--muted2);font-family:var(--fh);font-size:.78rem;font-weight:700;cursor:pointer;
+  transition:all .18s;display:flex;align-items:center;justify-content:center;
+  touch-action:manipulation;}
+.pg-btn:active,.pg-btn:hover{border-color:#ff6b3540;color:var(--text);}
+.pg-btn.sel{border-color:#ff6b35;color:#ff6b35;background:#ff6b3515;
+  box-shadow:0 0 10px #ff6b3520;}
+
+/* ── EACH PAGE ──────────────────────────────────── */
+.each-info{background:#ff6b3510;border:1px solid #ff6b3520;border-radius:12px;
+  padding:clamp(12px,3vw,16px) clamp(14px,3vw,20px);
+  font-size:clamp(.78rem,2.5vw,.84rem);color:var(--muted2);line-height:1.7;}
+.each-info strong{color:#ff6b35;}
+
+/* ── INTERVAL ───────────────────────────────────── */
+.interval-wrap{display:grid;grid-template-columns:1fr;gap:14px;}
+@media(min-width:480px){.interval-wrap{grid-template-columns:160px 1fr;align-items:start;}}
+.interval-desc{font-size:.78rem;color:var(--muted2);line-height:1.6;}
+#intervalPreview{font-size:.78rem;color:var(--muted2);margin-top:8px;}
+
+/* ── ACTION BAR ─────────────────────────────────── */
+.divider{height:1px;background:var(--border);margin:20px 0;}
+.action-bar{display:grid;grid-template-columns:1fr;gap:10px;}
+@media(min-width:480px){.action-bar{grid-template-columns:auto auto 1fr;align-items:center;}}
+.btn-split{background:linear-gradient(135deg,#ff6b35,#f5a623);border:none;color:#07080f;
+  font-family:var(--fh);font-size:.9rem;font-weight:800;padding:14px 32px;
+  border-radius:100px;cursor:pointer;transition:all .25s;letter-spacing:.01em;
+  display:flex;align-items:center;justify-content:center;gap:10px;
+  min-height:52px;touch-action:manipulation;width:100%;}
+@media(min-width:480px){.btn-split{width:auto;}}
+.btn-split:hover{opacity:.85;transform:translateY(-2px);box-shadow:0 12px 32px #ff6b3550;}
+.btn-split:active{transform:scale(.97);}
+.btn-split:disabled{opacity:.4;cursor:not-allowed;transform:none;box-shadow:none;}
+.btn-reset-sm{background:transparent;border:1px solid var(--border);color:var(--muted2);
+  font-family:var(--fb);font-size:.85rem;padding:13px 24px;border-radius:100px;cursor:pointer;
+  transition:all .2s;min-height:52px;width:100%;
+  display:flex;align-items:center;justify-content:center;touch-action:manipulation;}
+@media(min-width:480px){.btn-reset-sm{width:auto;}}
+.btn-reset-sm:hover,.btn-reset-sm:active{border-color:var(--a2);color:var(--a2);}
+.split-hint{font-size:.7rem;color:var(--muted);line-height:1.5;
+  text-align:center;padding:4px 0;}
+@media(min-width:480px){.split-hint{text-align:left;}}
+
+/* ── PROGRESS ───────────────────────────────────── */
+.progress-wrap{display:none;flex-direction:column;align-items:center;padding:36px 0;gap:16px;}
+.progress-wrap.show{display:flex;}
+.progress-ring{position:relative;width:80px;height:80px;}
+.progress-ring svg{transform:rotate(-90deg);}
+.progress-ring circle{transition:stroke-dashoffset .3s ease;}
+.pr-txt{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  font-family:var(--fh);font-size:.88rem;font-weight:700;color:var(--a1);}
+.prog-label{font-size:.8rem;color:var(--muted2);}
+
+/* ── RESULTS ────────────────────────────────────── */
+.results-header{display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:14px;flex-wrap:wrap;gap:8px;}
+.results-title{font-family:var(--fh);font-size:.9rem;font-weight:700;}
+.results-count{font-size:.72rem;color:var(--muted2);background:var(--card);
+  border:1px solid var(--border);padding:3px 10px;border-radius:100px;}
+.output-list{display:flex;flex-direction:column;gap:9px;max-height:340px;overflow-y:auto;
+  padding-right:4px;}
+.output-list::-webkit-scrollbar{width:4px;}
+.output-list::-webkit-scrollbar-track{background:transparent;}
+.output-list::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
+.out-item{background:#0c0e1a;border:1px solid var(--border);border-radius:12px;
+  display:flex;align-items:center;gap:11px;padding:11px 13px;
+  animation:slideIn .3s ease forwards;}
+@keyframes slideIn{from{opacity:0;transform:translateX(-8px);}to{opacity:1;transform:translateX(0);}}
+.out-icon{font-size:1.1rem;flex-shrink:0;}
+.out-info{flex:1;min-width:0;}
+.out-name{font-size:.8rem;font-weight:500;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.out-pages{font-size:.69rem;color:var(--muted2);margin-top:2px;}
+.out-pages span{color:var(--a1);}
+.btn-dl{background:linear-gradient(135deg,#ff6b35,#f5a623);border:none;color:#07080f;
+  font-family:var(--fb);font-size:.7rem;font-weight:700;padding:8px 13px;
+  border-radius:100px;cursor:pointer;transition:all .2s;
+  white-space:nowrap;flex-shrink:0;min-height:36px;touch-action:manipulation;}
+.btn-dl:hover,.btn-dl:active{opacity:.85;transform:scale(1.04);}
+
+/* ── BOTTOM ACTIONS ─────────────────────────────── */
+.bottom-actions{display:grid;grid-template-columns:1fr;gap:10px;margin-top:18px;}
+@media(min-width:480px){
+  .bottom-actions{grid-template-columns:auto auto;justify-content:flex-end;}
+}
+.btn-dl-all{background:linear-gradient(135deg,#ff6b35,#f5a623);border:none;color:#07080f;
+  font-family:var(--fb);font-size:.88rem;font-weight:700;padding:13px 28px;
+  border-radius:100px;cursor:pointer;transition:all .25s;letter-spacing:.02em;
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  min-height:50px;touch-action:manipulation;}
+.btn-dl-all:hover{opacity:.85;transform:translateY(-2px);box-shadow:0 12px 32px #ff6b3550;}
+.btn-dl-all:active{transform:scale(.97);}
+.btn-split-again{background:transparent;border:1px solid var(--border);color:var(--muted2);
+  font-family:var(--fb);font-size:.85rem;padding:13px 24px;border-radius:100px;cursor:pointer;
+  transition:all .2s;display:flex;align-items:center;justify-content:center;
+  min-height:50px;touch-action:manipulation;}
+.btn-split-again:hover,.btn-split-again:active{border-color:var(--a2);color:var(--a2);}
+
+/* ── TOAST ──────────────────────────────────────── */
+.toast{position:fixed;bottom:calc(20px + var(--safe-b));left:50%;
+  transform:translateX(-50%) translateY(20px);
+  background:var(--card);border:1px solid var(--border);color:var(--text);
+  font-size:.78rem;padding:11px 20px;border-radius:100px;z-index:9999;
+  opacity:0;transition:all .35s;pointer-events:none;
+  max-width:calc(100vw - 28px);text-align:center;word-break:break-word;
+  box-shadow:0 8px 32px #00000060;}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+.toast.ok{border-color:#43e97b50;color:#43e97b;}
+.toast.err{border-color:#ff3cac50;color:#ff3cac;}
+</style>
+</head>
+<body>
+<div class="blob b1"></div><div class="blob b2"></div><div class="blob b3"></div>
+
+<!-- NAV -->
+<nav>
+  <a href="index.html" class="nav-logo">Toolzy</a>
+  <div class="nav-right">
+    <span class="nav-badge">PDF</span>
+    <a href="index.html" class="nav-back">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <polyline points="15 18 9 12 15 6"/>
+      </svg>
+      <span class="nav-back-label">All Tools</span>
+    </a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="tool-badge">✂️ PDF Tool</div>
+  <span class="hero-icon">✂️</span>
+  <h1>PDF Splitter</h1>
+  <p>Split a PDF into separate pages or custom ranges — instantly, in your browser. No uploads. 100% private.</p>
+</section>
+
+<div class="main-wrap">
+
+  <!-- STEP 1 : UPLOAD -->
+  <div class="section-card active" id="step1">
+    <div class="sc-header">
+      <div class="sc-num">1</div>
+      <div class="sc-title">Upload your PDF</div>
+    </div>
+
+    <div class="upload-zone" id="dropZone"
+      onclick="document.getElementById('fileInput').click()">
+      <span class="upload-icon">📄</span>
+      <div class="upload-title">Drop your PDF here</div>
+      <div class="upload-sub">or tap to browse files</div>
+      <button class="btn-upload"
+        onclick="event.stopPropagation();document.getElementById('fileInput').click()">
+        Choose PDF File
+      </button>
+      <div class="upload-hint">
+        Supports PDFs up to 200 MB&nbsp;·&nbsp;
+        Processed entirely in your browser&nbsp;·&nbsp;
+        Your file never leaves your device
+      </div>
+    </div>
+    <input type="file" id="fileInput" accept=".pdf,application/pdf"/>
+
+    <div class="file-info-card" id="fileInfoCard">
+      <div class="fi-icon">📋</div>
+      <div class="fi-details">
+        <div class="fi-name" id="fiName">—</div>
+        <div class="fi-meta">
+          <span id="fiPages">0</span> pages &nbsp;·&nbsp;
+          <span id="fiSize">—</span>
+        </div>
+      </div>
+      <button class="btn-clear" onclick="clearFile()">✕ Remove</button>
+    </div>
+  </div>
+
+  <!-- STEP 2 : CONFIGURE -->
+  <div class="section-card" id="step2">
+    <div class="sc-header">
+      <div class="sc-num">2</div>
+      <div class="sc-title">Choose split method</div>
+      <div class="sc-sub" id="totalPagesLabel">— pages</div>
+    </div>
+
+    <div class="mode-tabs">
+      <button class="mode-tab active" onclick="setMode('range',this)">
+        <span class="tab-icon">📐</span>Page Range
+      </button>
+      <button class="mode-tab" onclick="setMode('pick',this)">
+        <span class="tab-icon">🎯</span>Pick Pages
+      </button>
+      <button class="mode-tab" onclick="setMode('each',this)">
+        <span class="tab-icon">📄</span>Every Page
+      </button>
+      <button class="mode-tab" onclick="setMode('interval',this)">
+        <span class="tab-icon">🔁</span>Interval
+      </button>
+    </div>
+
+    <!-- RANGE -->
+    <div class="mode-content active" id="mc-range">
+      <div id="rangeRows"></div>
+      <button class="btn-add-range" onclick="addRangeRow()">+ Add Another Range</button>
+    </div>
+
+    <!-- PICK PAGES -->
+    <div class="mode-content" id="mc-pick">
+      <div class="sel-actions">
+        <button class="sa-btn" onclick="selectAll()">All</button>
+        <button class="sa-btn" onclick="selectNone()">Clear</button>
+        <button class="sa-btn" onclick="selectOdd()">Odd</button>
+        <button class="sa-btn" onclick="selectEven()">Even</button>
+      </div>
+      <div class="page-grid" id="pageGrid"></div>
+      <div style="font-size:.7rem;color:var(--muted);margin-top:8px;line-height:1.5;">
+        Selected pages → extracted into one PDF file.
+      </div>
+    </div>
+
+    <!-- EVERY PAGE -->
+    <div class="mode-content" id="mc-each">
+      <div class="each-info">
+        Each page exported as a <strong>separate PDF</strong>.<br/>
+        <strong id="eachPageCount">0</strong> pages →
+        <strong id="eachFileCount">0</strong> individual files.<br/><br/>
+        Files download one by one. Large PDFs may take a moment.
+      </div>
+    </div>
+
+    <!-- INTERVAL -->
+    <div class="mode-content" id="mc-interval">
+      <div class="interval-wrap">
+        <div class="input-group">
+          <label class="input-label">Pages per chunk</label>
+          <input class="inp" type="number" id="intervalInput"
+            value="2" min="1" max="9999"
+            inputmode="numeric" pattern="[0-9]*" placeholder="e.g. 2"/>
+        </div>
+        <div class="interval-desc">
+          Splits into equal chunks. The last chunk may have fewer pages if the
+          total doesn't divide evenly.
+          <div id="intervalPreview"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+    <div class="action-bar">
+      <button class="btn-split" id="splitBtn" onclick="doSplit()">✂️ Split PDF</button>
+      <button class="btn-reset-sm" onclick="resetAll()">↺ Reset</button>
+      <div class="split-hint">100% local · never leaves your device</div>
+    </div>
+  </div>
+
+  <!-- STEP 3 : RESULTS -->
+  <div class="section-card" id="step3">
+    <div class="sc-header">
+      <div class="sc-num">3</div>
+      <div class="sc-title">Download your files</div>
+    </div>
+
+    <!-- progress ring -->
+    <div class="progress-wrap" id="progressWrap">
+      <div class="progress-ring">
+        <svg width="80" height="80" viewBox="0 0 80 80">
+          <circle cx="40" cy="40" r="34" fill="none" stroke="#1c1f35" stroke-width="5"/>
+          <circle id="progressCircle" cx="40" cy="40" r="34" fill="none" stroke="#ff6b35"
+            stroke-width="5" stroke-linecap="round"
+            stroke-dasharray="213.6" stroke-dashoffset="213.6"/>
+        </svg>
+        <div class="pr-txt" id="progressTxt">0%</div>
+      </div>
+      <div class="prog-label" id="progressLabel">Processing pages…</div>
+    </div>
+
+    <!-- results list -->
+    <div id="resultsArea" style="display:none;">
+      <div class="results-header">
+        <div class="results-title">Split complete! 🎉</div>
+        <span class="results-count" id="resultsCount">0 files</span>
+      </div>
+      <div class="output-list" id="outputList"></div>
+      <div class="bottom-actions">
+        <button class="btn-split-again" onclick="resetAll()">✂️ Split Another</button>
+        <button class="btn-dl-all" id="dlAllBtn">⬇ Download All</button>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /main-wrap -->
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── STATE ──────────────────────────────────────
+let pdfDoc = null, totalPages = 0, currentMode = 'range', splitResults = [];
+
+// ── FILE LOADING ───────────────────────────────
+document.getElementById('fileInput').addEventListener('change', e => {
+  const f = e.target.files[0];
+  if (f) loadFile(f);
+});
+
+const dropZone = document.getElementById('dropZone');
+['dragover','dragenter'].forEach(ev => dropZone.addEventListener(ev, e => {
+  e.preventDefault(); dropZone.classList.add('drag-over');
+}));
+['dragleave','dragend'].forEach(ev => dropZone.addEventListener(ev, () =>
+  dropZone.classList.remove('drag-over')
+));
+dropZone.addEventListener('drop', e => {
+  e.preventDefault(); dropZone.classList.remove('drag-over');
+  const f = e.dataTransfer.files[0];
+  if (f && f.type === 'application/pdf') loadFile(f);
+  else showToast('Please drop a valid PDF.', 'err');
+});
+
+async function loadFile(file) {
+  try {
+    showToast('Loading PDF…');
+    const bytes = await file.arrayBuffer();
+    pdfDoc = await PDFLib.PDFDocument.load(bytes);
+    totalPages = pdfDoc.getPageCount();
+
+    document.getElementById('fiName').textContent = file.name;
+    document.getElementById('fiPages').textContent = totalPages;
+    document.getElementById('fiSize').textContent = formatBytes(file.size);
+    document.getElementById('fileInfoCard').classList.add('show');
+    document.getElementById('totalPagesLabel').textContent = `${totalPages} pages`;
+    document.getElementById('eachPageCount').textContent = totalPages;
+    document.getElementById('eachFileCount').textContent = totalPages;
+
+    buildPageGrid();
+    buildRangeRows();
+    updateIntervalPreview();
+
+    document.getElementById('step2').classList.add('active');
+    document.getElementById('step3').classList.remove('active');
+    document.getElementById('resultsArea').style.display = 'none';
+    document.getElementById('progressWrap').classList.remove('show');
+    splitResults = [];
+
+    showToast(`✅ Loaded — ${totalPages} pages`, 'ok');
+    setTimeout(() => document.getElementById('step2')
+      .scrollIntoView({ behavior:'smooth', block:'start' }), 280);
+  } catch(err) {
+    showToast('Failed to load PDF. Is it valid?', 'err');
+    console.error(err);
+  }
+}
+
+function clearFile() {
+  pdfDoc = null; totalPages = 0; splitResults = [];
+  document.getElementById('fileInput').value = '';
+  document.getElementById('fileInfoCard').classList.remove('show');
+  document.getElementById('step2').classList.remove('active');
+  document.getElementById('step3').classList.remove('active');
+}
+
+// ── PAGE GRID ──────────────────────────────────
+function buildPageGrid() {
+  const grid = document.getElementById('pageGrid');
+  grid.innerHTML = '';
+  for (let i = 1; i <= totalPages; i++) {
+    const btn = document.createElement('button');
+    btn.className = 'pg-btn';
+    btn.textContent = i;
+    btn.dataset.page = i;
+    btn.addEventListener('click', () => btn.classList.toggle('sel'));
+    grid.appendChild(btn);
+  }
+}
+const selectAll  = () => document.querySelectorAll('.pg-btn').forEach(b => b.classList.add('sel'));
+const selectNone = () => document.querySelectorAll('.pg-btn').forEach(b => b.classList.remove('sel'));
+const selectOdd  = () => document.querySelectorAll('.pg-btn').forEach(b =>
+  b.classList.toggle('sel', +b.dataset.page % 2 === 1));
+const selectEven = () => document.querySelectorAll('.pg-btn').forEach(b =>
+  b.classList.toggle('sel', +b.dataset.page % 2 === 0));
+
+// ── RANGE ROWS ─────────────────────────────────
+let rangeCount = 0;
+function buildRangeRows() {
+  document.getElementById('rangeRows').innerHTML = '';
+  rangeCount = 0;
+  addRangeRow();
+}
+function addRangeRow() {
+  rangeCount++;
+  const id = rangeCount;
+  const row = document.createElement('div');
+  row.className = 'input-row';
+  row.id = `rr-${id}`;
+  row.innerHTML = `
+    <div class="input-group">
+      <label class="input-label">From</label>
+      <input class="inp" type="number" id="rf-${id}" value="1" min="1" max="${totalPages}"
+        inputmode="numeric" pattern="[0-9]*"/>
+    </div>
+    <span class="inp-sep">→</span>
+    <div class="input-group">
+      <label class="input-label">To</label>
+      <input class="inp" type="number" id="rt-${id}" value="${totalPages}" min="1" max="${totalPages}"
+        inputmode="numeric" pattern="[0-9]*"/>
+    </div>
+    <button class="remove-row-btn" onclick="removeRow(${id})" title="Remove">×</button>`;
+  document.getElementById('rangeRows').appendChild(row);
+}
+function removeRow(id) {
+  const el = document.getElementById(`rr-${id}`);
+  if (el && document.querySelectorAll('[id^="rr-"]').length > 1) el.remove();
+  else showToast('Need at least one range.', 'err');
+}
+
+// ── INTERVAL PREVIEW ───────────────────────────
+document.getElementById('intervalInput').addEventListener('input', updateIntervalPreview);
+function updateIntervalPreview() {
+  if (!totalPages) return;
+  const n = Math.max(1, parseInt(document.getElementById('intervalInput').value) || 1);
+  const chunks = Math.ceil(totalPages / n);
+  document.getElementById('intervalPreview').textContent =
+    `→ ${chunks} file${chunks !== 1 ? 's' : ''} from ${totalPages} pages`;
+}
+
+// ── MODE SWITCH ────────────────────────────────
+function setMode(mode, btn) {
+  currentMode = mode;
+  document.querySelectorAll('.mode-tab').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll('.mode-content').forEach(c => c.classList.remove('active'));
+  document.getElementById(`mc-${mode}`).classList.add('active');
+}
+
+// ── SPLIT ──────────────────────────────────────
+async function doSplit() {
+  if (!pdfDoc) { showToast('Upload a PDF first!', 'err'); return; }
+
+  splitResults = [];
+  let segments = [];
+  let valid = true;
+
+  if (currentMode === 'range') {
+    document.querySelectorAll('[id^="rr-"]').forEach((row, i) => {
+      const from = parseInt(row.querySelector('[id^="rf-"]').value);
+      const to   = parseInt(row.querySelector('[id^="rt-"]').value);
+      if (isNaN(from) || isNaN(to) || from < 1 || to > totalPages || from > to) {
+        showToast(`Range ${i+1}: invalid (1–${totalPages})`, 'err');
+        valid = false; return;
+      }
+      const pages = [];
+      for (let p = from; p <= to; p++) pages.push(p - 1);
+      segments.push({ name:`pages_${from}-${to}.pdf`, pages });
+    });
+  } else if (currentMode === 'pick') {
+    const sel = [...document.querySelectorAll('.pg-btn.sel')].map(b => +b.dataset.page - 1);
+    if (!sel.length) { showToast('Select at least one page.', 'err'); return; }
+    segments.push({ name:'selected_pages.pdf', pages: sel });
+  } else if (currentMode === 'each') {
+    for (let p = 0; p < totalPages; p++)
+      segments.push({ name:`page_${p+1}.pdf`, pages:[p] });
+  } else if (currentMode === 'interval') {
+    const n = Math.max(1, parseInt(document.getElementById('intervalInput').value) || 1);
+    for (let p = 0; p < totalPages; p += n) {
+      const chunk = [];
+      for (let i = p; i < Math.min(p + n, totalPages); i++) chunk.push(i);
+      segments.push({ name:`pages_${p+1}-${Math.min(p+n,totalPages)}.pdf`, pages: chunk });
+    }
+  }
+
+  if (!valid || !segments.length) return;
+
+  document.getElementById('step3').classList.add('active');
+  document.getElementById('progressWrap').classList.add('show');
+  document.getElementById('resultsArea').style.display = 'none';
+  setProgress(0, 'Starting…');
+  setTimeout(() => document.getElementById('step3')
+    .scrollIntoView({ behavior:'smooth', block:'start' }), 200);
+
+  const outputList = document.getElementById('outputList');
+  outputList.innerHTML = '';
+
+  for (let i = 0; i < segments.length; i++) {
+    const seg = segments[i];
+    setProgress(Math.round((i / segments.length) * 100), `File ${i+1} of ${segments.length}…`);
+    await new Promise(r => setTimeout(r, 0));
+
+    const newPdf = await PDFLib.PDFDocument.create();
+    const copied = await newPdf.copyPages(pdfDoc, seg.pages);
+    copied.forEach(p => newPdf.addPage(p));
+    const bytes = await newPdf.save();
+    splitResults.push({ name: seg.name, bytes });
+
+    const item = document.createElement('div');
+    item.className = 'out-item';
+    item.style.animationDelay = `${Math.min(i * 40, 400)}ms`;
+    item.innerHTML = `
+      <div class="out-icon">📄</div>
+      <div class="out-info">
+        <div class="out-name">${seg.name}</div>
+        <div class="out-pages">
+          <span>${seg.pages.length}</span> page${seg.pages.length !== 1 ? 's' : ''}
+          &nbsp;·&nbsp; ${formatBytes(bytes.byteLength)}
+        </div>
+      </div>
+      <button class="btn-dl" data-idx="${i}">⬇ Save</button>`;
+    item.querySelector('.btn-dl').addEventListener('click', () => downloadFile(i));
+    outputList.appendChild(item);
+  }
+
+  setProgress(100, 'Done!');
+  await new Promise(r => setTimeout(r, 500));
+  document.getElementById('progressWrap').classList.remove('show');
+  document.getElementById('resultsArea').style.display = 'block';
+  document.getElementById('resultsCount').textContent =
+    `${splitResults.length} file${splitResults.length !== 1 ? 's' : ''}`;
+  document.getElementById('dlAllBtn').onclick = downloadAll;
+  showToast(`✅ Split into ${splitResults.length} file${splitResults.length !== 1 ? 's' : ''}!`, 'ok');
+}
+
+function setProgress(pct, label) {
+  const C = 213.6;
+  document.getElementById('progressCircle').style.strokeDashoffset = C - (pct / 100) * C;
+  document.getElementById('progressTxt').textContent = pct + '%';
+  document.getElementById('progressLabel').textContent = label;
+}
+
+// ── DOWNLOAD ───────────────────────────────────
+function downloadFile(idx) {
+  const { name, bytes } = splitResults[idx];
+  const url = URL.createObjectURL(new Blob([bytes], { type:'application/pdf' }));
+  const a = document.createElement('a');
+  a.href = url; a.download = name;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 3000);
+}
+
+async function downloadAll() {
+  const btn = document.getElementById('dlAllBtn');
+  btn.disabled = true; btn.textContent = '⏳ Downloading…';
+  for (let i = 0; i < splitResults.length; i++) {
+    downloadFile(i);
+    await new Promise(r => setTimeout(r, 350));
+  }
+  btn.disabled = false; btn.innerHTML = '⬇ Download All';
+  showToast('All files downloaded!', 'ok');
+}
+
+// ── RESET ──────────────────────────────────────
+function resetAll() {
+  pdfDoc = null; totalPages = 0; splitResults = [];
+  document.getElementById('fileInput').value = '';
+  document.getElementById('fileInfoCard').classList.remove('show');
+  document.getElementById('step2').classList.remove('active');
+  document.getElementById('step3').classList.remove('active');
+  document.getElementById('outputList').innerHTML = '';
+  window.scrollTo({ top:0, behavior:'smooth' });
+}
+
+// ── UTILS ──────────────────────────────────────
+function formatBytes(b) {
+  if (b < 1024) return b + ' B';
+  if (b < 1048576) return (b / 1024).toFixed(1) + ' KB';
+  return (b / 1048576).toFixed(2) + ' MB';
+}
+
+let toastTimer;
+function showToast(msg, type = '') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show' + (type ? ' ' + type : '');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 3000);
+}
+</script>
+</body>
+</html>

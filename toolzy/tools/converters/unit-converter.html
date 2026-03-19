@@ -1,0 +1,846 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Toolzy — Unit Converter</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=JetBrains+Mono:wght@300;400;600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+
+:root{
+  --bg:#05050d;
+  --surface:#080812;
+  --surface2:#0d0d1e;
+  --border:#1c1c38;
+  --border2:#2a2a50;
+  --cyan:#00e5ff;
+  --cyan-glow:rgba(0,229,255,0.15);
+  --orange:#ff6b35;
+  --violet:#9b5de5;
+  --green:#00f5a0;
+  --red:#ff4466;
+  --yellow:#ffd60a;
+  --pink:#ff69b4;
+  --text:#ccd6ff;
+  --text-dim:#3d4a70;
+  --text-med:#7080aa;
+}
+
+html{scroll-behavior:smooth;}
+body{
+  background:var(--bg);
+  font-family:'JetBrains Mono',monospace;
+  color:var(--text);
+  min-height:100vh;
+  overflow-x:hidden;
+}
+
+/* ── BACKGROUND ── */
+body::before{
+  content:'';position:fixed;inset:0;
+  background-image:
+    linear-gradient(rgba(0,229,255,0.015) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(0,229,255,0.015) 1px,transparent 1px);
+  background-size:40px 40px;
+  pointer-events:none;z-index:0;
+  mask-image:radial-gradient(ellipse 80% 80% at 50% 30%,black 0%,transparent 85%);
+}
+body::after{
+  content:'';position:fixed;inset:0;
+  background:
+    radial-gradient(ellipse 50% 40% at 10% 10%,rgba(0,229,255,0.03) 0%,transparent 70%),
+    radial-gradient(ellipse 40% 50% at 90% 90%,rgba(155,93,229,0.03) 0%,transparent 70%);
+  pointer-events:none;z-index:0;
+}
+
+/* ── NAV ── */
+nav{
+  position:sticky;top:0;z-index:100;
+  background:rgba(5,5,13,0.92);
+  backdrop-filter:blur(18px);
+  border-bottom:1px solid var(--border);
+  padding:0 32px;
+  display:flex;align-items:center;justify-content:space-between;
+  height:56px;
+}
+.nav-brand{
+  display:flex;align-items:center;gap:10px;text-decoration:none;
+}
+.nav-logo{
+  width:30px;height:30px;border:1.5px solid var(--cyan);border-radius:6px;
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Orbitron',sans-serif;font-size:13px;font-weight:900;
+  color:var(--cyan);box-shadow:0 0 12px rgba(0,229,255,0.4);
+  text-shadow:0 0 8px var(--cyan);
+}
+.nav-name{
+  font-family:'Orbitron',sans-serif;font-size:14px;font-weight:900;
+  letter-spacing:5px;color:var(--text);
+}
+.nav-links{display:flex;gap:6px;align-items:center;}
+.nav-link{
+  padding:6px 14px;border-radius:8px;border:1px solid transparent;
+  font-size:10px;letter-spacing:2px;color:var(--text-med);
+  text-decoration:none;transition:all .2s;cursor:pointer;
+  font-family:'JetBrains Mono',monospace;background:none;
+}
+.nav-link:hover{color:var(--text);border-color:var(--border2);}
+.nav-link.active{
+  color:var(--cyan);border-color:rgba(0,229,255,0.35);
+  background:rgba(0,229,255,0.06);
+  box-shadow:0 0 10px rgba(0,229,255,0.1);
+}
+
+/* ── PAGE WRAPPER ── */
+.page{
+  position:relative;z-index:1;
+  max-width:1100px;margin:0 auto;
+  padding:32px 20px 60px;
+}
+
+/* ── HERO ── */
+.hero{
+  text-align:center;margin-bottom:36px;
+  animation:fade-up .6s ease both;
+}
+@keyframes fade-up{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+.hero-tag{
+  display:inline-block;
+  font-size:8px;letter-spacing:4px;
+  color:var(--cyan);border:1px solid rgba(0,229,255,0.3);
+  background:rgba(0,229,255,0.06);
+  padding:4px 14px;border-radius:20px;margin-bottom:14px;
+}
+.hero h1{
+  font-family:'Orbitron',sans-serif;
+  font-size:clamp(22px,4vw,38px);font-weight:900;
+  letter-spacing:3px;
+  background:linear-gradient(135deg,#fff 0%,var(--cyan) 50%,var(--violet) 100%);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  background-clip:text;
+  margin-bottom:10px;
+}
+.hero p{font-size:12px;color:var(--text-med);letter-spacing:1px;}
+
+/* ── CATEGORY PILLS ── */
+.cat-bar{
+  display:flex;flex-wrap:wrap;gap:6px;justify-content:center;
+  margin-bottom:28px;
+  animation:fade-up .6s .1s ease both;
+}
+.cat-pill{
+  padding:7px 16px;border-radius:30px;border:1px solid var(--border);
+  background:var(--surface);color:var(--text-med);
+  font-size:10px;letter-spacing:1.5px;cursor:pointer;
+  transition:all .2s;font-family:'JetBrains Mono',monospace;
+  display:flex;align-items:center;gap:7px;
+  white-space:nowrap;
+}
+.cat-pill:hover{border-color:var(--border2);color:var(--text);}
+.cat-pill.active{
+  border-color:var(--accent, var(--cyan));
+  color:var(--accent, var(--cyan));
+  background:rgba(0,229,255,0.07);
+  box-shadow:0 0 12px rgba(0,229,255,0.12);
+}
+.cat-pill .icon{font-size:14px;}
+
+/* ── CONVERTER CARD ── */
+.converter-card{
+  background:var(--surface);
+  border:1px solid var(--border2);
+  border-radius:20px;
+  overflow:hidden;
+  box-shadow:
+    0 0 0 1px rgba(0,229,255,0.04),
+    0 0 40px rgba(0,229,255,0.05),
+    0 30px 80px rgba(0,0,0,0.6);
+  animation:fade-up .6s .2s ease both;
+  position:relative;
+}
+.converter-card::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:2px;
+  background:linear-gradient(90deg,transparent 5%,var(--accent,var(--cyan)) 40%,var(--violet) 70%,transparent 95%);
+  transition:all .3s;
+}
+
+/* ── CARD HEADER ── */
+.card-header{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:18px 24px;border-bottom:1px solid var(--border);
+}
+.card-title{
+  display:flex;align-items:center;gap:10px;
+}
+.card-icon{font-size:20px;}
+.card-name{
+  font-family:'Orbitron',sans-serif;font-size:13px;font-weight:700;
+  letter-spacing:3px;color:var(--text);
+}
+.card-count{
+  font-size:9px;letter-spacing:2px;color:var(--text-dim);
+}
+
+/* ── MAIN CONVERSION AREA ── */
+.conv-area{
+  display:grid;grid-template-columns:1fr auto 1fr;
+  gap:0;align-items:stretch;
+}
+
+/* FROM / TO boxes */
+.conv-box{
+  padding:24px;
+}
+.conv-box:first-child{border-right:1px solid var(--border);}
+.conv-label{
+  font-size:8px;letter-spacing:3px;color:var(--text-dim);
+  margin-bottom:10px;
+}
+.conv-select{
+  width:100%;background:#030308;
+  border:1px solid var(--border);border-radius:10px;
+  padding:10px 14px;color:var(--text);
+  font-family:'JetBrains Mono',monospace;font-size:12px;
+  outline:none;cursor:pointer;
+  transition:all .2s;margin-bottom:12px;
+  appearance:none;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%234a5580'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 12px center;
+  padding-right:32px;
+}
+.conv-select:focus{border-color:var(--accent,var(--cyan));box-shadow:0 0 12px rgba(0,229,255,0.1);}
+.conv-input{
+  width:100%;background:#030308;
+  border:1px solid var(--border);border-radius:10px;
+  padding:14px 16px;
+  font-family:'Orbitron',sans-serif;font-size:22px;font-weight:700;
+  color:var(--cyan);outline:none;
+  transition:all .2s;
+  text-shadow:0 0 15px rgba(0,229,255,0.4);
+}
+.conv-input:focus{border-color:var(--accent,var(--cyan));box-shadow:0 0 16px rgba(0,229,255,0.12);}
+.conv-input.result{
+  color:var(--green);
+  text-shadow:0 0 15px rgba(0,245,160,0.4);
+  border-color:rgba(0,245,160,0.2);
+  cursor:default;
+}
+.conv-input::placeholder{color:var(--text-dim);}
+.conv-unit-label{
+  font-size:10px;color:var(--text-dim);letter-spacing:1px;
+  margin-top:8px;min-height:16px;
+}
+
+/* SWAP BUTTON in middle */
+.conv-swap{
+  display:flex;align-items:center;justify-content:center;
+  padding:0 16px;
+  border-left:1px solid var(--border);
+  border-right:1px solid var(--border);
+}
+.swap-btn{
+  width:42px;height:42px;border-radius:50%;
+  border:1px solid var(--border2);
+  background:var(--surface2);
+  color:var(--text-med);font-size:18px;
+  cursor:pointer;transition:all .25s;
+  display:flex;align-items:center;justify-content:center;
+}
+.swap-btn:hover{
+  border-color:var(--accent,var(--cyan));
+  color:var(--accent,var(--cyan));
+  background:rgba(0,229,255,0.08);
+  box-shadow:0 0 14px rgba(0,229,255,0.2);
+  transform:rotate(180deg);
+}
+
+/* ── ALL UNITS TABLE ── */
+.all-units{
+  border-top:1px solid var(--border);
+  padding:20px 24px;
+}
+.all-units-title{
+  font-size:8px;letter-spacing:3px;color:var(--text-dim);
+  margin-bottom:14px;
+}
+.units-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(200px,1fr));
+  gap:6px;
+}
+.unit-row{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:8px 12px;border-radius:8px;
+  border:1px solid transparent;
+  transition:all .15s;cursor:default;
+}
+.unit-row:hover{background:rgba(0,229,255,0.03);border-color:rgba(0,229,255,0.1);}
+.unit-name{font-size:11px;color:var(--text-med);}
+.unit-val{
+  font-family:'Orbitron',sans-serif;
+  font-size:11px;color:var(--cyan);
+  text-shadow:0 0 8px rgba(0,229,255,0.3);
+}
+.unit-val.zero{color:var(--text-dim);text-shadow:none;}
+
+/* ── FORMULA STRIP ── */
+.formula-strip{
+  margin:0 24px 20px;
+  background:#030308;border:1px solid var(--border);
+  border-radius:10px;padding:12px 16px;
+  display:flex;align-items:center;gap:12px;
+}
+.formula-icon{font-size:14px;flex-shrink:0;}
+.formula-text{font-size:11px;color:var(--text-med);letter-spacing:.5px;}
+.formula-eq{color:var(--yellow);font-style:italic;}
+
+/* ── FOOTER ── */
+footer{
+  position:relative;z-index:1;
+  border-top:1px solid var(--border);
+  padding:20px 32px;
+  display:flex;align-items:center;justify-content:space-between;
+}
+.footer-brand{font-family:'Orbitron',sans-serif;font-size:10px;letter-spacing:3px;color:var(--text-dim);}
+.footer-copy{font-size:9px;letter-spacing:1.5px;color:var(--text-dim);}
+
+/* ── RESPONSIVE ── */
+@media(max-width:600px){
+  nav{padding:0 16px;}
+  .page{padding:20px 12px 48px;}
+  .conv-area{grid-template-columns:1fr;grid-template-rows:auto auto auto;}
+  .conv-swap{padding:12px;border:none;border-top:1px solid var(--border);border-bottom:1px solid var(--border);}
+  .conv-box:first-child{border-right:none;border-bottom:1px solid var(--border);}
+  .nav-links{gap:3px;}
+  .nav-link{padding:5px 8px;font-size:9px;}
+}
+
+/* ── COPY FLASH ── */
+@keyframes copy-flash{0%{background:rgba(0,245,160,0.15)}100%{background:transparent}}
+.copied{animation:copy-flash .6s ease;}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <a class="nav-brand" href="#">
+    <div class="nav-logo">T</div>
+    <div class="nav-name">TOOLZY</div>
+  </a>
+  <div class="nav-links">
+    <a class="nav-link" href="#">CALC</a>
+    <a class="nav-link active">CONVERT</a>
+    <a class="nav-link" href="#">COLOUR</a>
+    <a class="nav-link" href="#">DATE</a>
+    <a class="nav-link" href="#">MORE</a>
+  </div>
+</nav>
+
+<!-- PAGE -->
+<div class="page">
+
+  <!-- HERO -->
+  <div class="hero">
+    <div class="hero-tag">UNIT CONVERTER</div>
+    <h1>CONVERT ANYTHING</h1>
+    <p>15 categories · 120+ units · instant results</p>
+  </div>
+
+  <!-- CATEGORY PILLS -->
+  <div class="cat-bar" id="catBar"></div>
+
+  <!-- CONVERTER CARD -->
+  <div class="converter-card" id="convCard">
+    <div class="card-header">
+      <div class="card-title">
+        <span class="card-icon" id="cardIcon">📏</span>
+        <span class="card-name" id="cardName">LENGTH</span>
+      </div>
+      <span class="card-count" id="cardCount"></span>
+    </div>
+
+    <div class="conv-area">
+      <!-- FROM -->
+      <div class="conv-box">
+        <div class="conv-label">FROM</div>
+        <select class="conv-select" id="fromUnit" onchange="convert()"></select>
+        <input class="conv-input" id="fromVal" type="number" placeholder="0" oninput="convert()" />
+        <div class="conv-unit-label" id="fromLabel"></div>
+      </div>
+
+      <!-- SWAP -->
+      <div class="conv-swap">
+        <button class="swap-btn" onclick="swapUnits()" title="Swap units">⇄</button>
+      </div>
+
+      <!-- TO -->
+      <div class="conv-box">
+        <div class="conv-label">TO</div>
+        <select class="conv-select" id="toUnit" onchange="convert()"></select>
+        <input class="conv-input result" id="toVal" readonly placeholder="—" />
+        <div class="conv-unit-label" id="toLabel"></div>
+      </div>
+    </div>
+
+    <!-- FORMULA -->
+    <div class="formula-strip" id="formulaStrip">
+      <span class="formula-icon">ƒ</span>
+      <span class="formula-text" id="formulaText">Select values to see formula</span>
+    </div>
+
+    <!-- ALL UNITS GRID -->
+    <div class="all-units">
+      <div class="all-units-title">ALL UNITS — RELATIVE TO INPUT VALUE</div>
+      <div class="units-grid" id="unitsGrid"></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <span class="footer-brand">TOOLZY</span>
+  <span class="footer-copy">UNIT CONVERTER v1.0</span>
+</footer>
+
+
+<script>
+// ═══════════════════════════════════════
+//  UNIT DATA
+// ═══════════════════════════════════════
+const CATEGORIES = [
+  {
+    id:'length', name:'LENGTH', icon:'📏', accent:'#00e5ff',
+    units:[
+      {id:'m',      name:'Metre',          sym:'m',    toBase:1},
+      {id:'km',     name:'Kilometre',      sym:'km',   toBase:1e3},
+      {id:'cm',     name:'Centimetre',     sym:'cm',   toBase:0.01},
+      {id:'mm',     name:'Millimetre',     sym:'mm',   toBase:0.001},
+      {id:'um',     name:'Micrometre',     sym:'μm',   toBase:1e-6},
+      {id:'nm',     name:'Nanometre',      sym:'nm',   toBase:1e-9},
+      {id:'mi',     name:'Mile',           sym:'mi',   toBase:1609.344},
+      {id:'yd',     name:'Yard',           sym:'yd',   toBase:0.9144},
+      {id:'ft',     name:'Foot',           sym:'ft',   toBase:0.3048},
+      {id:'in',     name:'Inch',           sym:'in',   toBase:0.0254},
+      {id:'nmi',    name:'Nautical Mile',  sym:'nmi',  toBase:1852},
+      {id:'ly',     name:'Light Year',     sym:'ly',   toBase:9.461e15},
+      {id:'au',     name:'Astron. Unit',   sym:'AU',   toBase:1.496e11},
+      {id:'pc',     name:'Parsec',         sym:'pc',   toBase:3.086e16},
+    ]
+  },
+  {
+    id:'mass', name:'MASS', icon:'⚖️', accent:'#ff6b35',
+    units:[
+      {id:'kg',   name:'Kilogram',    sym:'kg',   toBase:1},
+      {id:'g',    name:'Gram',        sym:'g',    toBase:0.001},
+      {id:'mg',   name:'Milligram',   sym:'mg',   toBase:1e-6},
+      {id:'ug',   name:'Microgram',   sym:'μg',   toBase:1e-9},
+      {id:'t',    name:'Metric Ton',  sym:'t',    toBase:1000},
+      {id:'lb',   name:'Pound',       sym:'lb',   toBase:0.453592},
+      {id:'oz',   name:'Ounce',       sym:'oz',   toBase:0.0283495},
+      {id:'st',   name:'Stone',       sym:'st',   toBase:6.35029},
+      {id:'ton',  name:'Short Ton',   sym:'ton',  toBase:907.185},
+      {id:'lton', name:'Long Ton',    sym:'LT',   toBase:1016.05},
+      {id:'ct',   name:'Carat',       sym:'ct',   toBase:0.0002},
+      {id:'gr',   name:'Grain',       sym:'gr',   toBase:6.47989e-5},
+    ]
+  },
+  {
+    id:'temp', name:'TEMPERATURE', icon:'🌡️', accent:'#ff4466',
+    special:true,
+    units:[
+      {id:'c',  name:'Celsius',    sym:'°C'},
+      {id:'f',  name:'Fahrenheit', sym:'°F'},
+      {id:'k',  name:'Kelvin',     sym:'K'},
+      {id:'r',  name:'Rankine',    sym:'°R'},
+      {id:'re', name:'Réaumur',    sym:'°Ré'},
+    ]
+  },
+  {
+    id:'area', name:'AREA', icon:'⬛', accent:'#9b5de5',
+    units:[
+      {id:'m2',   name:'Square Metre',    sym:'m²',   toBase:1},
+      {id:'km2',  name:'Square Kilometre',sym:'km²',  toBase:1e6},
+      {id:'cm2',  name:'Square Centimetre',sym:'cm²', toBase:1e-4},
+      {id:'mm2',  name:'Square Millimetre',sym:'mm²', toBase:1e-6},
+      {id:'ha',   name:'Hectare',         sym:'ha',   toBase:1e4},
+      {id:'ac',   name:'Acre',            sym:'ac',   toBase:4046.86},
+      {id:'mi2',  name:'Square Mile',     sym:'mi²',  toBase:2.59e6},
+      {id:'ft2',  name:'Square Foot',     sym:'ft²',  toBase:0.092903},
+      {id:'in2',  name:'Square Inch',     sym:'in²',  toBase:6.4516e-4},
+      {id:'yd2',  name:'Square Yard',     sym:'yd²',  toBase:0.836127},
+    ]
+  },
+  {
+    id:'volume', name:'VOLUME', icon:'🧊', accent:'#00f5a0',
+    units:[
+      {id:'l',    name:'Litre',          sym:'L',    toBase:0.001},
+      {id:'ml',   name:'Millilitre',     sym:'mL',   toBase:1e-6},
+      {id:'m3',   name:'Cubic Metre',    sym:'m³',   toBase:1},
+      {id:'cm3',  name:'Cubic Centimetre',sym:'cm³', toBase:1e-6},
+      {id:'ft3',  name:'Cubic Foot',     sym:'ft³',  toBase:0.0283168},
+      {id:'in3',  name:'Cubic Inch',     sym:'in³',  toBase:1.6387e-5},
+      {id:'gal',  name:'Gallon (US)',    sym:'gal',  toBase:0.00378541},
+      {id:'qt',   name:'Quart (US)',     sym:'qt',   toBase:9.4635e-4},
+      {id:'pt',   name:'Pint (US)',      sym:'pt',   toBase:4.7318e-4},
+      {id:'cup',  name:'Cup (US)',       sym:'cup',  toBase:2.3659e-4},
+      {id:'floz', name:'Fl. Oz (US)',    sym:'fl oz',toBase:2.9574e-5},
+      {id:'tbs',  name:'Tablespoon',     sym:'tbsp', toBase:1.4787e-5},
+      {id:'tsp',  name:'Teaspoon',       sym:'tsp',  toBase:4.929e-6},
+      {id:'gali', name:'Gallon (UK)',    sym:'gal UK',toBase:0.00454609},
+    ]
+  },
+  {
+    id:'speed', name:'SPEED', icon:'⚡', accent:'#ffd60a',
+    units:[
+      {id:'ms',   name:'Metre/Second',  sym:'m/s',    toBase:1},
+      {id:'kph',  name:'Kilometre/Hour',sym:'km/h',   toBase:1/3.6},
+      {id:'mph',  name:'Mile/Hour',     sym:'mph',    toBase:0.44704},
+      {id:'fps',  name:'Foot/Second',   sym:'ft/s',   toBase:0.3048},
+      {id:'kn',   name:'Knot',          sym:'kn',     toBase:0.514444},
+      {id:'mach', name:'Mach',          sym:'M',      toBase:340.29},
+      {id:'c',    name:'Speed of Light',sym:'c',      toBase:2.998e8},
+    ]
+  },
+  {
+    id:'time', name:'TIME', icon:'⏱️', accent:'#00e5ff',
+    units:[
+      {id:'s',    name:'Second',     sym:'s',    toBase:1},
+      {id:'ms2',  name:'Millisecond',sym:'ms',   toBase:0.001},
+      {id:'us',   name:'Microsecond',sym:'μs',   toBase:1e-6},
+      {id:'ns',   name:'Nanosecond', sym:'ns',   toBase:1e-9},
+      {id:'min',  name:'Minute',     sym:'min',  toBase:60},
+      {id:'h',    name:'Hour',       sym:'h',    toBase:3600},
+      {id:'d',    name:'Day',        sym:'d',    toBase:86400},
+      {id:'wk',   name:'Week',       sym:'wk',   toBase:604800},
+      {id:'mo',   name:'Month (avg)',sym:'mo',   toBase:2629800},
+      {id:'yr',   name:'Year',       sym:'yr',   toBase:31557600},
+      {id:'dec',  name:'Decade',     sym:'dec',  toBase:315576000},
+      {id:'cen',  name:'Century',    sym:'cen',  toBase:3155760000},
+    ]
+  },
+  {
+    id:'energy', name:'ENERGY', icon:'⚡', accent:'#ffd60a',
+    units:[
+      {id:'j',    name:'Joule',         sym:'J',    toBase:1},
+      {id:'kj',   name:'Kilojoule',     sym:'kJ',   toBase:1000},
+      {id:'cal',  name:'Calorie',       sym:'cal',  toBase:4.184},
+      {id:'kcal', name:'Kilocalorie',   sym:'kcal', toBase:4184},
+      {id:'wh',   name:'Watt-hour',     sym:'Wh',   toBase:3600},
+      {id:'kwh',  name:'Kilowatt-hour', sym:'kWh',  toBase:3600000},
+      {id:'ev',   name:'Electronvolt',  sym:'eV',   toBase:1.602e-19},
+      {id:'btu',  name:'BTU',           sym:'BTU',  toBase:1055.06},
+      {id:'ft_lb',name:'Foot-pound',    sym:'ft·lb',toBase:1.35582},
+    ]
+  },
+  {
+    id:'pressure', name:'PRESSURE', icon:'🌀', accent:'#ff69b4',
+    units:[
+      {id:'pa',   name:'Pascal',        sym:'Pa',   toBase:1},
+      {id:'kpa',  name:'Kilopascal',    sym:'kPa',  toBase:1000},
+      {id:'mpa',  name:'Megapascal',    sym:'MPa',  toBase:1e6},
+      {id:'bar',  name:'Bar',           sym:'bar',  toBase:1e5},
+      {id:'mbar', name:'Millibar',      sym:'mbar', toBase:100},
+      {id:'atm',  name:'Atmosphere',    sym:'atm',  toBase:101325},
+      {id:'torr', name:'Torr',          sym:'Torr', toBase:133.322},
+      {id:'psi',  name:'PSI',           sym:'psi',  toBase:6894.76},
+      {id:'mmhg', name:'mmHg',          sym:'mmHg', toBase:133.322},
+    ]
+  },
+  {
+    id:'angle', name:'ANGLE', icon:'📐', accent:'#ff6b35',
+    units:[
+      {id:'deg',  name:'Degree',     sym:'°',    toBase:1},
+      {id:'rad',  name:'Radian',     sym:'rad',  toBase:180/Math.PI},
+      {id:'grad', name:'Gradian',    sym:'grad', toBase:0.9},
+      {id:'turn', name:'Turn',       sym:'turn', toBase:360},
+      {id:'arcm', name:'Arcminute',  sym:'\'',   toBase:1/60},
+      {id:'arcs', name:'Arcsecond',  sym:'"',    toBase:1/3600},
+    ]
+  },
+  {
+    id:'freq', name:'FREQUENCY', icon:'〰️', accent:'#00e5ff',
+    units:[
+      {id:'hz',   name:'Hertz',      sym:'Hz',   toBase:1},
+      {id:'khz',  name:'Kilohertz',  sym:'kHz',  toBase:1e3},
+      {id:'mhz',  name:'Megahertz',  sym:'MHz',  toBase:1e6},
+      {id:'ghz',  name:'Gigahertz',  sym:'GHz',  toBase:1e9},
+      {id:'thz',  name:'Terahertz',  sym:'THz',  toBase:1e12},
+      {id:'rpm',  name:'RPM',        sym:'rpm',  toBase:1/60},
+      {id:'rps',  name:'RPS',        sym:'rps',  toBase:1},
+    ]
+  },
+];
+
+// ═══════════════════════════════════════
+//  STATE
+// ═══════════════════════════════════════
+let currentCat = CATEGORIES[0];
+
+// ═══════════════════════════════════════
+//  BUILD CATEGORY BAR
+// ═══════════════════════════════════════
+function buildCatBar(){
+  const bar = document.getElementById('catBar');
+  bar.innerHTML = CATEGORIES.map(c=>`
+    <div class="cat-pill${c.id===currentCat.id?' active':''}"
+         style="${c.id===currentCat.id?`--accent:${c.accent};border-color:${c.accent};color:${c.accent};background:${c.accent}18`:''}"
+         onclick="selectCat('${c.id}')">
+      <span class="icon">${c.icon}</span>${c.name}
+    </div>
+  `).join('');
+}
+
+function selectCat(id){
+  currentCat = CATEGORIES.find(c=>c.id===id);
+  buildCatBar();
+  buildConverter();
+}
+
+// ═══════════════════════════════════════
+//  BUILD CONVERTER
+// ═══════════════════════════════════════
+function buildConverter(){
+  const card = document.getElementById('convCard');
+  // Update top bar gradient accent
+  card.style.setProperty('--accent', currentCat.accent||'var(--cyan)');
+  document.getElementById('cardIcon').textContent = currentCat.icon;
+  document.getElementById('cardName').textContent = currentCat.name;
+
+  if(currentCat.special === 'base'){
+    buildBaseConverter();
+    return;
+  }
+
+  document.getElementById('cardCount').textContent =
+    (currentCat.units?.length||0) + ' UNITS';
+
+  // Populate selects
+  const fromSel = document.getElementById('fromUnit');
+  const toSel   = document.getElementById('toUnit');
+  const opts = (currentCat.units||[]).map(u=>
+    `<option value="${u.id}">${u.name} (${u.sym})</option>`
+  ).join('');
+  fromSel.innerHTML = opts;
+  toSel.innerHTML   = opts;
+  toSel.selectedIndex = 1;
+
+  document.getElementById('fromVal').value = '';
+  document.getElementById('toVal').value   = '';
+  document.getElementById('fromLabel').textContent = '';
+  document.getElementById('toLabel').textContent   = '';
+  document.getElementById('formulaText').textContent = 'Enter a value to convert';
+
+  // Restore full layout if coming from base converter
+  document.querySelector('.conv-area').innerHTML = `
+    <div class="conv-box">
+      <div class="conv-label">FROM</div>
+      <select class="conv-select" id="fromUnit" onchange="convert()"></select>
+      <input class="conv-input" id="fromVal" type="number" placeholder="0" oninput="convert()" />
+      <div class="conv-unit-label" id="fromLabel"></div>
+    </div>
+    <div class="conv-swap">
+      <button class="swap-btn" onclick="swapUnits()" title="Swap units">⇄</button>
+    </div>
+    <div class="conv-box">
+      <div class="conv-label">TO</div>
+      <select class="conv-select" id="toUnit" onchange="convert()"></select>
+      <input class="conv-input result" id="toVal" readonly placeholder="—" />
+      <div class="conv-unit-label" id="toLabel"></div>
+    </div>`;
+
+  document.getElementById('fromUnit').innerHTML = opts;
+  document.getElementById('toUnit').innerHTML   = opts;
+  document.getElementById('toUnit').selectedIndex = 1;
+  document.getElementById('fromUnit').onchange  = convert;
+  document.getElementById('toUnit').onchange    = convert;
+  document.getElementById('fromVal').oninput    = convert;
+
+  buildUnitsGrid();
+  document.getElementById('formulaText').textContent = 'Enter a value to see formula';
+}
+
+// ═══════════════════════════════════════
+//  CONVERT
+// ═══════════════════════════════════════
+function convert(){
+  const fromId  = document.getElementById('fromUnit').value;
+  const toId    = document.getElementById('toUnit').value;
+  const rawVal  = parseFloat(document.getElementById('fromVal').value);
+
+  const fromU = currentCat.units.find(u=>u.id===fromId);
+  const toU   = currentCat.units.find(u=>u.id===toId);
+  if(!fromU||!toU) return;
+
+  document.getElementById('fromLabel').textContent = fromU.name;
+  document.getElementById('toLabel').textContent   = toU.name;
+
+  if(isNaN(rawVal)){
+    document.getElementById('toVal').value = '';
+    document.getElementById('formulaText').textContent = 'Enter a value to see formula';
+    buildUnitsGrid(NaN);
+    return;
+  }
+
+  let result;
+  if(currentCat.special){
+    result = convertTemp(rawVal, fromId, toId);
+  } else {
+    // to base then to target
+    const base = rawVal * fromU.toBase;
+    result = base / toU.toBase;
+  }
+
+  document.getElementById('toVal').value = fmtResult(result);
+  buildFormula(rawVal, fromU, toU, result);
+  buildUnitsGrid(rawVal, fromId);
+}
+
+function fmtResult(n){
+  if(!isFinite(n)) return '∞';
+  if(n===0) return '0';
+  if(Math.abs(n) < 1e-9 || Math.abs(n) >= 1e13)
+    return parseFloat(n.toPrecision(8)).toExponential(4);
+  return parseFloat(n.toPrecision(10)).toString();
+}
+
+// ═══════════════════════════════════════
+//  TEMPERATURE
+// ═══════════════════════════════════════
+function toKelvin(v, from){
+  switch(from){
+    case'c':  return v + 273.15;
+    case'f':  return (v - 32) * 5/9 + 273.15;
+    case'k':  return v;
+    case'r':  return v * 5/9;
+    case're': return v * 5/4 + 273.15;
+  }
+}
+function fromKelvin(k, to){
+  switch(to){
+    case'c':  return k - 273.15;
+    case'f':  return (k - 273.15) * 9/5 + 32;
+    case'k':  return k;
+    case'r':  return k * 9/5;
+    case're': return (k - 273.15) * 4/5;
+  }
+}
+function convertTemp(v, from, to){
+  return fromKelvin(toKelvin(v, from), to);
+}
+
+// ═══════════════════════════════════════
+//  FORMULA STRIP
+// ═══════════════════════════════════════
+function buildFormula(val, fromU, toU, result){
+  let text;
+  if(currentCat.special){
+    const formulas = {
+      'c-f':`°F = (${val} × 9/5) + 32`,
+      'f-c':`°C = (${val} − 32) × 5/9`,
+      'c-k':`K = ${val} + 273.15`,
+      'k-c':`°C = ${val} − 273.15`,
+      'f-k':`K = (${val} − 32) × 5/9 + 273.15`,
+      'k-f':`°F = (${val} − 273.15) × 9/5 + 32`,
+    };
+    text = formulas[`${fromU.id}-${toU.id}`] ||
+      `${val} ${fromU.sym} = ${fmtResult(result)} ${toU.sym}`;
+  } else {
+    const ratio = toU.toBase===0 ? '∞' : fmtResult(fromU.toBase / toU.toBase);
+    text = `${val} ${fromU.sym} × ${ratio} = ${fmtResult(result)} ${toU.sym}`;
+  }
+  document.getElementById('formulaText').innerHTML =
+    `<span class="formula-eq">${text}</span>`;
+}
+
+// ═══════════════════════════════════════
+//  ALL UNITS GRID
+// ═══════════════════════════════════════
+function buildUnitsGrid(inputVal, fromId){
+  const grid = document.getElementById('unitsGrid');
+  if(!currentCat.units){grid.innerHTML='';return;}
+
+  grid.innerHTML = currentCat.units.map(u=>{
+    let val = '';
+    let zero = false;
+    if(!isNaN(inputVal) && inputVal !== undefined && fromId){
+      const fromU = currentCat.units.find(x=>x.id===fromId);
+      if(currentCat.special){
+        val = fmtResult(convertTemp(inputVal, fromId, u.id));
+      } else {
+        const base = inputVal * fromU.toBase;
+        val = fmtResult(base / u.toBase);
+      }
+      zero = (parseFloat(val) === 0);
+    }
+    return `<div class="unit-row" onclick="setToUnit('${u.id}')">
+      <span class="unit-name">${u.name} <span style="color:var(--text-dim);font-size:9px;">${u.sym}</span></span>
+      <span class="unit-val${zero?' zero':''}">${val||'—'}</span>
+    </div>`;
+  }).join('');
+}
+
+function setToUnit(id){
+  document.getElementById('toUnit').value = id;
+  convert();
+}
+
+// ═══════════════════════════════════════
+//  SWAP
+// ═══════════════════════════════════════
+function swapUnits(){
+  const fSel = document.getElementById('fromUnit');
+  const tSel = document.getElementById('toUnit');
+  const fVal = document.getElementById('fromVal');
+  const tVal = document.getElementById('toVal');
+  [fSel.value, tSel.value] = [tSel.value, fSel.value];
+  const prevResult = tVal.value;
+  fVal.value = prevResult !== '—' ? prevResult : '';
+  convert();
+}
+
+// ═══════════════════════════════════════
+//  NUMBER BASE CONVERTER (special)
+// ═══════════════════════════════════════
+function buildBaseConverter(){
+  document.getElementById('cardCount').textContent = 'DEC · HEX · OCT · BIN';
+  document.querySelector('.conv-area').innerHTML = `
+    <div style="padding:24px;width:100%;display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+      ${['decimal:10:DEC','hexadecimal:16:HEX','octal:8:OCT','binary:2:BIN'].map(s=>{
+        const[name,base,label]=s.split(':');
+        return `<div>
+          <div style="font-size:8px;letter-spacing:3px;color:var(--text-dim);margin-bottom:8px;">${label} (base ${base})</div>
+          <input id="base_${base}" class="conv-input" style="font-size:18px;width:100%"
+            placeholder="${label}" oninput="convertBase(${base})" />
+        </div>`;
+      }).join('')}
+    </div>`;
+  document.querySelector('.conv-swap').style.display='none';
+  document.getElementById('unitsGrid').innerHTML='<div style="font-size:11px;color:var(--text-dim);padding:4px 8px;">Type in any base field above — others update instantly.</div>';
+  document.getElementById('formulaText').textContent = 'Type in any field to convert between number bases';
+}
+
+function convertBase(fromBase){
+  const el = document.getElementById(`base_${fromBase}`);
+  const raw = el.value.trim().toUpperCase();
+  if(!raw){['10','16','8','2'].forEach(b=>{if(b!==String(fromBase))document.getElementById(`base_${b}`).value='';});return;}
+  const decimal = parseInt(raw, fromBase);
+  if(isNaN(decimal)){el.style.borderColor='var(--red)';return;}
+  el.style.borderColor='';
+  if(document.getElementById('base_10')) document.getElementById('base_10').value = fromBase==10?raw:decimal;
+  if(document.getElementById('base_16')) document.getElementById('base_16').value = fromBase==16?raw:decimal.toString(16).toUpperCase();
+  if(document.getElementById('base_8'))  document.getElementById('base_8').value  = fromBase==8?raw:decimal.toString(8);
+  if(document.getElementById('base_2'))  document.getElementById('base_2').value  = fromBase==2?raw:decimal.toString(2);
+  document.getElementById('formulaText').innerHTML = `<span class="formula-eq">${raw} (base ${fromBase}) = ${decimal} (decimal)</span>`;
+}
+
+// ═══════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════
+buildCatBar();
+buildConverter();
+</script>
+</body>
+</html>

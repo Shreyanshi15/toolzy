@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Background Remover — Toolzy</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --bg:#07080f;--card:#111422;--card-h:#161929;--border:#1c1f35;
+  --a1:#00e5ff;--a2:#ff3cac;--a3:#f5a623;--a4:#43e97b;--a5:#a78bfa;
+  --text:#dde2ff;--muted:#4a5070;--muted2:#6a7090;
+  --fh:'Syne',sans-serif;--fb:'DM Sans',sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+body{background:var(--bg);color:var(--text);font-family:var(--fb);min-height:100vh;overflow-x:hidden;}
+body::before{content:'';position:fixed;inset:0;
+  background-image:linear-gradient(rgba(0,229,255,.025) 1px,transparent 1px),
+  linear-gradient(90deg,rgba(0,229,255,.025) 1px,transparent 1px);
+  background-size:56px 56px;pointer-events:none;z-index:0;}
+.blob{position:fixed;border-radius:50%;filter:blur(120px);pointer-events:none;z-index:0;}
+.b1{width:500px;height:500px;background:#43e97b;opacity:.07;top:-200px;left:-200px;animation:bd 16s ease-in-out infinite alternate;}
+.b2{width:500px;height:500px;background:#a78bfa;opacity:.06;bottom:-150px;right:-150px;animation:bd 20s ease-in-out infinite alternate-reverse;}
+@keyframes bd{from{transform:translate(0,0)scale(1);}to{transform:translate(40px,30px)scale(1.1);}}
+
+nav{position:sticky;top:0;z-index:200;display:flex;align-items:center;justify-content:space-between;
+  padding:0 20px;height:58px;background:rgba(7,8,15,.92);backdrop-filter:blur(20px);
+  border-bottom:1px solid var(--border);}
+.nav-logo{font-family:var(--fh);font-size:1.3rem;font-weight:800;letter-spacing:-1px;
+  background:linear-gradient(120deg,#00e5ff,#a78bfa 50%,#ff3cac);
+  -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;
+  text-decoration:none;}
+.nav-back{display:flex;align-items:center;gap:6px;color:var(--muted2);text-decoration:none;
+  font-size:.8rem;border:1px solid var(--border);padding:6px 12px;border-radius:100px;transition:all .2s;}
+.nav-back:hover{color:var(--text);border-color:var(--a4);}
+.nav-back svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2.5;}
+
+.hero{position:relative;z-index:1;text-align:center;padding:40px 20px 24px;}
+.badge{display:inline-flex;align-items:center;gap:7px;background:#ffffff06;border:1px solid var(--border);
+  color:var(--muted2);font-size:.68rem;letter-spacing:.08em;text-transform:uppercase;
+  padding:5px 13px;border-radius:100px;margin-bottom:16px;}
+.hero-title{font-family:var(--fh);font-size:clamp(1.9rem,6vw,3.4rem);font-weight:800;
+  letter-spacing:-2px;line-height:1.05;margin-bottom:8px;}
+.hero-title span{background:linear-gradient(135deg,#43e97b,#00e5ff 60%,#a78bfa);
+  -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;}
+.hero-sub{font-size:.85rem;color:var(--muted2);font-weight:300;line-height:1.6;}
+
+main{position:relative;z-index:1;max-width:900px;margin:0 auto;padding:0 16px 60px;}
+
+/* UPLOAD AREA */
+.upload-area{display:block;margin-bottom:20px;}
+.upload-label{display:flex;flex-direction:column;align-items:center;justify-content:center;
+  border:2px dashed var(--border);border-radius:18px;padding:52px 24px;
+  text-align:center;cursor:pointer;transition:all .25s;background:var(--card);
+  min-height:200px;}
+.upload-label:hover{border-color:var(--a4);background:var(--card-h);}
+.upload-input{display:none;}
+.upload-icon{font-size:3rem;margin-bottom:14px;display:block;animation:float 3s ease-in-out infinite;}
+@keyframes float{0%,100%{transform:translateY(0);}50%{transform:translateY(-8px);}}
+.upload-title{font-family:var(--fh);font-size:1.05rem;font-weight:700;margin-bottom:8px;}
+.upload-sub{font-size:.8rem;color:var(--muted2);line-height:1.7;margin-bottom:20px;}
+.upload-sub strong{color:var(--a4);}
+.upload-btn{display:inline-block;padding:12px 34px;
+  background:linear-gradient(135deg,#43e97b,#00e5ff);
+  border-radius:12px;color:#07080f;font-family:var(--fh);font-size:.9rem;font-weight:700;}
+
+/* CONTROLS PANEL */
+.controls{background:var(--card);border:1px solid var(--border);border-radius:18px;
+  padding:22px;margin-bottom:16px;display:none;}
+.controls.show{display:block;}
+.ctrl-title{font-family:var(--fh);font-size:.72rem;font-weight:700;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--muted2);margin-bottom:16px;}
+.ctrl-row{display:flex;align-items:center;gap:14px;margin-bottom:14px;flex-wrap:wrap;}
+.ctrl-lbl{font-size:.78rem;color:var(--muted2);min-width:90px;flex-shrink:0;}
+.ctrl-val{font-size:.78rem;color:var(--text);font-weight:600;min-width:36px;text-align:right;}
+input[type=range]{flex:1;min-width:120px;-webkit-appearance:none;appearance:none;
+  height:4px;background:var(--border);border-radius:2px;outline:none;cursor:pointer;}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;
+  width:18px;height:18px;border-radius:50%;background:var(--a4);
+  border:3px solid var(--bg);cursor:pointer;}
+.hint{font-size:.72rem;color:var(--muted2);background:#43e97b0a;border:1px solid #43e97b20;
+  border-radius:10px;padding:10px 14px;margin-bottom:16px;line-height:1.6;}
+.hint strong{color:var(--a4);}
+.btn-remove{width:100%;padding:14px;background:linear-gradient(135deg,#43e97b,#00e5ff);
+  border:none;border-radius:12px;color:#07080f;font-family:var(--fh);font-size:.95rem;
+  font-weight:700;cursor:pointer;transition:opacity .2s,transform .15s;}
+.btn-remove:hover{opacity:.9;transform:translateY(-2px);}
+.btn-remove:disabled{opacity:.5;cursor:not-allowed;transform:none;}
+
+/* PROGRESS */
+.prog-wrap{margin-bottom:14px;display:none;}
+.prog-track{height:5px;background:var(--border);border-radius:3px;overflow:hidden;}
+.prog-fill{height:100%;width:0%;border-radius:3px;
+  background:linear-gradient(90deg,#43e97b,#00e5ff);transition:width .2s ease;}
+.prog-lbl{font-size:.68rem;color:var(--muted2);margin-top:5px;text-align:right;}
+
+/* RESULTS */
+.result-grid{display:none;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px;}
+.result-grid.show{display:grid;}
+.r-panel{background:var(--card);border:1px solid var(--border);border-radius:16px;overflow:hidden;}
+.r-head{padding:11px 14px;border-bottom:1px solid var(--border);font-family:var(--fh);
+  font-size:.68rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted2);}
+.r-img{padding:12px;display:flex;align-items:center;justify-content:center;min-height:200px;}
+.checker-bg{background:repeating-conic-gradient(#ffffff0a 0% 25%,transparent 0% 50%) 0 0/18px 18px;}
+.r-img img{max-width:100%;max-height:300px;width:100%;object-fit:contain;border-radius:8px;}
+.r-img canvas{max-width:100%;max-height:300px;border-radius:8px;}
+
+/* BG SWATCHES */
+.bg-row{padding:10px 14px;border-top:1px solid var(--border);
+  display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.bg-lbl{font-size:.63rem;color:var(--muted2);text-transform:uppercase;letter-spacing:.06em;}
+.sw{width:24px;height:24px;border-radius:6px;cursor:pointer;
+  border:2px solid transparent;transition:all .2s;flex-shrink:0;}
+.sw:hover,.sw.on{border-color:var(--a4);transform:scale(1.15);}
+.checker-sw{background:repeating-conic-gradient(#999 0% 25%,#fff 0% 50%) 0 0/8px 8px;}
+.sw-custom{width:24px;height:24px;border-radius:6px;cursor:pointer;
+  border:2px solid var(--border);padding:0;overflow:hidden;background:transparent;}
+
+/* ACTIONS */
+.action-row{display:none;gap:10px;margin-bottom:20px;flex-wrap:wrap;}
+.action-row.show{display:flex;}
+.btn-dl{flex:1;min-width:140px;padding:13px 20px;
+  background:linear-gradient(135deg,#43e97b,#00e5ff);border:none;border-radius:12px;
+  color:#07080f;font-family:var(--fh);font-size:.88rem;font-weight:700;
+  cursor:pointer;transition:opacity .2s,transform .15s;text-align:center;}
+.btn-dl:hover{opacity:.9;transform:translateY(-2px);}
+.btn-new{flex:1;min-width:120px;padding:13px 20px;background:transparent;
+  border:1px solid var(--border);border-radius:12px;color:var(--muted2);
+  font-family:var(--fb);font-size:.85rem;cursor:pointer;transition:all .2s;text-align:center;}
+.btn-new:hover{border-color:var(--a4);color:var(--a4);}
+
+/* INFO */
+.info-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;}
+.ic{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px;}
+.ic-icon{font-size:1.3rem;margin-bottom:7px;}
+.ic-title{font-family:var(--fh);font-size:.75rem;font-weight:700;margin-bottom:3px;}
+.ic-body{font-size:.68rem;color:var(--muted2);line-height:1.5;}
+
+footer{position:relative;z-index:1;border-top:1px solid var(--border);padding:20px;
+  display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-top:24px;}
+.foot-logo{font-family:var(--fh);font-size:1rem;font-weight:800;
+  background:linear-gradient(120deg,#00e5ff,#a78bfa);
+  -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;}
+.foot-txt{font-size:.72rem;color:var(--muted);}
+
+@media(max-width:600px){
+  .result-grid.show{grid-template-columns:1fr;}
+  .action-row.show{flex-direction:column;}
+  .ctrl-row{gap:8px;}
+}
+</style>
+</head>
+<body>
+<div class="blob b1"></div><div class="blob b2"></div>
+
+<nav>
+  <a class="nav-logo" href="index.html">Toolzy</a>
+  <a class="nav-back" href="index.html">
+    <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+    All Tools
+  </a>
+</nav>
+
+<section class="hero">
+  <div class="badge">🪄 Background Remover</div>
+  <h1 class="hero-title">Remove <span>Background</span></h1>
+  <p class="hero-sub">100% free · runs in your browser · no uploads · no servers · instant</p>
+</section>
+
+<main>
+
+  <!-- UPLOAD -->
+  <label class="upload-label" id="uploadLabel">
+    <input class="upload-input" type="file" id="fileInput" accept="image/png,image/jpeg,image/webp,image/jpg"/>
+    <span class="upload-icon">🖼️</span>
+    <div class="upload-title">Tap or click to choose image</div>
+    <div class="upload-sub">JPG · PNG · WEBP · Any size<br/><strong>Works 100% offline — no AI model needed</strong></div>
+    <span class="upload-btn">📂 Choose Image</span>
+  </label>
+
+  <!-- CONTROLS -->
+  <div class="controls" id="controls">
+    <div class="ctrl-title">⚙️ Removal Settings</div>
+    <div class="hint">
+      <strong>How it works:</strong> Samples background colour from the image corners and edges, then removes matching pixels. Works best on <strong>solid or simple backgrounds</strong> (white, sky, studio, etc). Adjust tolerance for best results.
+    </div>
+    <div class="ctrl-row">
+      <span class="ctrl-lbl">Tolerance</span>
+      <input type="range" id="tolerance" min="5" max="120" value="40"/>
+      <span class="ctrl-val" id="tolVal">40</span>
+    </div>
+    <div class="ctrl-row">
+      <span class="ctrl-lbl">Smooth edges</span>
+      <input type="range" id="smoothing" min="0" max="10" value="2"/>
+      <span class="ctrl-val" id="smVal">2</span>
+    </div>
+    <button class="btn-remove" id="btnRemove">🪄 Remove Background</button>
+  </div>
+
+  <!-- PROGRESS -->
+  <div class="prog-wrap" id="progWrap">
+    <div class="prog-track"><div class="prog-fill" id="progFill"></div></div>
+    <div class="prog-lbl" id="progLbl">Processing…</div>
+  </div>
+
+  <!-- RESULTS -->
+  <div class="result-grid" id="resultGrid">
+    <div class="r-panel">
+      <div class="r-head">📷 Original</div>
+      <div class="r-img"><img id="origImg" alt="original"/></div>
+    </div>
+    <div class="r-panel">
+      <div class="r-head">✨ Background Removed</div>
+      <div class="r-img checker-bg" id="resultWrap">
+        <canvas id="resultCanvas"></canvas>
+      </div>
+      <div class="bg-row">
+        <span class="bg-lbl">BG:</span>
+        <div class="sw checker-sw on" data-bg="transparent" title="Transparent"></div>
+        <div class="sw" data-bg="#ffffff" style="background:#fff"    title="White"></div>
+        <div class="sw" data-bg="#000000" style="background:#000"    title="Black"></div>
+        <div class="sw" data-bg="#07080f" style="background:#07080f" title="Dark"></div>
+        <div class="sw" data-bg="#43e97b" style="background:#43e97b" title="Green"></div>
+        <div class="sw" data-bg="#00e5ff" style="background:#00e5ff" title="Cyan"></div>
+        <div class="sw" data-bg="#ff3cac" style="background:#ff3cac" title="Pink"></div>
+        <input class="sw-custom" type="color" id="swCustom" title="Custom"/>
+      </div>
+    </div>
+  </div>
+
+  <!-- ACTIONS -->
+  <div class="action-row" id="actionRow">
+    <button class="btn-dl" id="btnDownload">⬇️ Download PNG</button>
+    <button class="btn-new" id="btnNew">🔄 Remove Another</button>
+    <button class="btn-new" id="btnRetry">🔧 Adjust & Retry</button>
+  </div>
+
+  <div class="info-grid">
+    <div class="ic"><div class="ic-icon">🔒</div><div class="ic-title">100% Private</div><div class="ic-body">Image never leaves your device. Everything runs in your browser.</div></div>
+    <div class="ic"><div class="ic-icon">⚡</div><div class="ic-title">Instant</div><div class="ic-body">No model download needed. Processes in milliseconds using canvas.</div></div>
+    <div class="ic"><div class="ic-icon">🎨</div><div class="ic-title">Custom BG</div><div class="ic-body">Swap background to any colour or keep transparent.</div></div>
+    <div class="ic"><div class="ic-icon">💾</div><div class="ic-title">PNG Output</div><div class="ic-body">High-quality PNG with full transparency preserved.</div></div>
+  </div>
+</main>
+
+<footer>
+  <div class="foot-logo">Toolzy</div>
+  <div class="foot-txt">© 2025 Toolzy · Free forever</div>
+  <div class="foot-txt">53 tools · 10 games</div>
+</footer>
+
+<script>
+const $ = id => document.getElementById(id);
+
+let loadedImage = null;
+let currentBg   = 'transparent';
+
+// ── File input via label — guaranteed to work everywhere ──────
+$('fileInput').addEventListener('change', function() {
+  const file = this.files && this.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const img = new Image();
+    img.onload = function() {
+      loadedImage = img;
+      $('origImg').src = e.target.result;
+      $('uploadLabel').style.display = 'none';
+      $('controls').classList.add('show');
+      $('resultGrid').classList.remove('show');
+      $('actionRow').classList.remove('show');
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+});
+
+// ── Tolerance slider ──────────────────────────────────────────
+$('tolerance').addEventListener('input', function() {
+  $('tolVal').textContent = this.value;
+});
+$('smoothing').addEventListener('input', function() {
+  $('smVal').textContent = this.value;
+});
+
+// ── Remove background ─────────────────────────────────────────
+$('btnRemove').addEventListener('click', function() {
+  if (!loadedImage) return;
+  this.disabled = true;
+  $('progWrap').style.display = 'block';
+  setProgress(10, 'Drawing image…');
+
+  setTimeout(() => {
+    try {
+      removeBackground();
+    } catch(e) {
+      console.error(e);
+      alert('Error: ' + e.message);
+      $('btnRemove').disabled = false;
+      $('progWrap').style.display = 'none';
+    }
+  }, 50);
+});
+
+function removeBackground() {
+  const tolerance = parseInt($('tolerance').value);
+  const smooth    = parseInt($('smoothing').value);
+  const img = loadedImage;
+
+  // Draw onto offscreen canvas
+  const canvas  = document.createElement('canvas');
+  canvas.width  = img.naturalWidth  || img.width;
+  canvas.height = img.naturalHeight || img.height;
+  const ctx = canvas.getContext('2d');
+  ctx.drawImage(img, 0, 0);
+
+  setProgress(25, 'Sampling background…');
+
+  const w = canvas.width;
+  const h = canvas.height;
+  const imageData = ctx.getImageData(0, 0, w, h);
+  const data = imageData.data;
+
+  // Sample background colour from all 4 corners + edges
+  const samples = [];
+  const samplePoints = [
+    [0,0],[1,0],[0,1],[1,1],
+    [w-1,0],[w-2,0],[w-1,1],
+    [0,h-1],[0,h-2],[1,h-1],
+    [w-1,h-1],[w-2,h-1],[w-1,h-2],
+    [Math.floor(w/2), 0],
+    [Math.floor(w/2), h-1],
+    [0, Math.floor(h/2)],
+    [w-1, Math.floor(h/2)],
+  ];
+
+  for (const [x, y] of samplePoints) {
+    const idx = (y * w + x) * 4;
+    samples.push([data[idx], data[idx+1], data[idx+2]]);
+  }
+
+  // Average the sampled bg colour
+  const bgR = Math.round(samples.reduce((s,c) => s+c[0], 0) / samples.length);
+  const bgG = Math.round(samples.reduce((s,c) => s+c[1], 0) / samples.length);
+  const bgB = Math.round(samples.reduce((s,c) => s+c[2], 0) / samples.length);
+
+  setProgress(40, 'Removing background…');
+
+  // Create alpha mask using colour distance
+  const mask = new Uint8Array(w * h);
+
+  for (let i = 0; i < w * h; i++) {
+    const r = data[i*4];
+    const g = data[i*4+1];
+    const b = data[i*4+2];
+    const dist = colorDist(r, g, b, bgR, bgG, bgB);
+    mask[i] = dist <= tolerance ? 0 : 255;
+  }
+
+  setProgress(60, 'Flood filling edges…');
+
+  // Flood fill from all edges to catch background behind subject
+  const visited = new Uint8Array(w * h);
+  const queue   = [];
+
+  // Seed from all 4 edges
+  for (let x = 0; x < w; x++) {
+    if (mask[x] === 0)         { queue.push(x);           visited[x] = 1; }
+    if (mask[(h-1)*w+x] === 0) { queue.push((h-1)*w+x);  visited[(h-1)*w+x] = 1; }
+  }
+  for (let y = 0; y < h; y++) {
+    if (mask[y*w] === 0)       { queue.push(y*w);         visited[y*w] = 1; }
+    if (mask[y*w+w-1] === 0)   { queue.push(y*w+w-1);     visited[y*w+w-1] = 1; }
+  }
+
+  // BFS flood fill
+  let qi = 0;
+  while (qi < queue.length) {
+    const idx = queue[qi++];
+    const x = idx % w;
+    const y = Math.floor(idx / w);
+    const neighbours = [];
+    if (x > 0)   neighbours.push(idx-1);
+    if (x < w-1) neighbours.push(idx+1);
+    if (y > 0)   neighbours.push(idx-w);
+    if (y < h-1) neighbours.push(idx+w);
+    for (const n of neighbours) {
+      if (!visited[n] && mask[n] === 0) {
+        visited[n] = 1;
+        queue.push(n);
+      }
+    }
+  }
+
+  setProgress(80, 'Applying transparency…');
+
+  // Apply: flood-filled (background) → transparent, rest → opaque
+  for (let i = 0; i < w * h; i++) {
+    if (visited[i]) {
+      data[i*4+3] = 0; // transparent
+    } else {
+      // Soft edge: pixels close to tolerance get partial transparency
+      const r = data[i*4], g = data[i*4+1], b = data[i*4+2];
+      const dist = colorDist(r, g, b, bgR, bgG, bgB);
+      if (dist <= tolerance * 1.6) {
+        const alpha = Math.round(((dist - tolerance) / (tolerance * 0.6)) * 255);
+        data[i*4+3] = Math.max(0, Math.min(255, alpha));
+      }
+    }
+  }
+
+  ctx.putImageData(imageData, 0, 0);
+
+  // Optional smoothing (blur then re-threshold alpha)
+  if (smooth > 0) {
+    applyAlphaSmooth(ctx, canvas, w, h, smooth);
+  }
+
+  setProgress(95, 'Rendering…');
+
+  // Copy to visible result canvas
+  const out = $('resultCanvas');
+  out.width  = w;
+  out.height = h;
+  const outCtx = out.getContext('2d');
+  outCtx.clearRect(0, 0, w, h);
+  outCtx.drawImage(canvas, 0, 0);
+
+  setProgress(100, 'Done!');
+
+  $('resultGrid').classList.add('show');
+  $('actionRow').classList.add('show');
+  $('btnRemove').disabled = false;
+
+  setTimeout(() => { $('progWrap').style.display = 'none'; }, 1000);
+}
+
+function colorDist(r1, g1, b1, r2, g2, b2) {
+  return Math.sqrt((r1-r2)**2 + (g1-g2)**2 + (b1-b2)**2);
+}
+
+function applyAlphaSmooth(ctx, canvas, w, h, passes) {
+  // Simple box-blur on alpha channel only
+  const imageData = ctx.getImageData(0, 0, w, h);
+  const data = imageData.data;
+  const alpha = new Float32Array(w * h);
+  for (let i = 0; i < w * h; i++) alpha[i] = data[i*4+3];
+
+  for (let p = 0; p < passes; p++) {
+    const tmp = new Float32Array(w * h);
+    for (let y = 1; y < h-1; y++) {
+      for (let x = 1; x < w-1; x++) {
+        const i = y*w+x;
+        tmp[i] = (alpha[i] + alpha[i-1] + alpha[i+1] + alpha[i-w] + alpha[i+w]) / 5;
+      }
+    }
+    for (let i = 0; i < w*h; i++) alpha[i] = tmp[i] || alpha[i];
+  }
+
+  for (let i = 0; i < w * h; i++) data[i*4+3] = Math.round(alpha[i]);
+  ctx.putImageData(imageData, 0, 0);
+}
+
+// ── BG swatches ───────────────────────────────────────────────
+document.querySelectorAll('.sw').forEach(sw => {
+  sw.addEventListener('click', () => applyBg(sw.dataset.bg, sw));
+});
+$('swCustom').addEventListener('input', e => applyBg(e.target.value, null));
+
+function applyBg(color, activeSw) {
+  currentBg = color;
+  document.querySelectorAll('.sw').forEach(s => s.classList.remove('on'));
+  if (activeSw) activeSw.classList.add('on');
+  $('resultWrap').style.background = color === 'transparent'
+    ? 'repeating-conic-gradient(#ffffff0a 0% 25%,transparent 0% 50%) 0 0/18px 18px'
+    : color;
+}
+
+// ── Download ──────────────────────────────────────────────────
+$('btnDownload').addEventListener('click', function() {
+  const canvas = $('resultCanvas');
+  if (!canvas.width) return;
+
+  if (currentBg === 'transparent') {
+    dl(canvas.toDataURL('image/png'));
+    return;
+  }
+  // Composite onto colour
+  const c = document.createElement('canvas');
+  c.width = canvas.width; c.height = canvas.height;
+  const ctx = c.getContext('2d');
+  ctx.fillStyle = currentBg;
+  ctx.fillRect(0, 0, c.width, c.height);
+  ctx.drawImage(canvas, 0, 0);
+  dl(c.toDataURL('image/png'));
+});
+
+function dl(href) {
+  const a = document.createElement('a');
+  a.href = href; a.download = 'toolzy-no-bg.png'; a.click();
+}
+
+// ── Reset ─────────────────────────────────────────────────────
+$('btnNew').addEventListener('click', function() {
+  loadedImage = null;
+  $('origImg').src = '';
+  $('resultGrid').classList.remove('show');
+  $('actionRow').classList.remove('show');
+  $('controls').classList.remove('show');
+  $('progWrap').style.display = 'none';
+  $('uploadLabel').style.display = '';
+  $('fileInput').value = '';
+  $('btnRemove').disabled = false;
+  const c = $('resultCanvas');
+  const ctx = c.getContext('2d');
+  ctx.clearRect(0, 0, c.width, c.height);
+  applyBg('transparent', document.querySelector('.sw.checker-sw'));
+});
+
+// ── Retry ─────────────────────────────────────────────────────
+$('btnRetry').addEventListener('click', function() {
+  $('resultGrid').classList.remove('show');
+  $('actionRow').classList.remove('show');
+  $('controls').classList.add('show');
+});
+
+// ── Helpers ───────────────────────────────────────────────────
+function setProgress(pct, label) {
+  $('progFill').style.width = pct + '%';
+  $('progLbl').textContent  = label + ' ' + pct + '%';
+}
+</script>
+</body>
+</html>
