@@ -2,9 +2,11 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0,minimum-scale=1.0"/>
 <title>Login — Toolzy</title>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet"/>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
 <style>
 :root{
   --bg:#07080f;--card:#111422;--border:#1c1f35;
@@ -13,199 +15,190 @@
   --fh:'Syne',sans-serif;--fb:'DM Sans',sans-serif;
 }
 *{margin:0;padding:0;box-sizing:border-box;}
-body{
-  background:var(--bg);color:var(--text);
-  font-family:var(--fb);min-height:100vh;
-  display:flex;flex-direction:column;align-items:center;justify-content:center;
-  overflow:hidden;
-}
-body::before{
-  content:'';position:fixed;inset:0;
-  background-image:
-    linear-gradient(rgba(0,229,255,.025) 1px,transparent 1px),
-    linear-gradient(90deg,rgba(0,229,255,.025) 1px,transparent 1px);
-  background-size:56px 56px;pointer-events:none;z-index:0;
-}
+body{background:var(--bg);color:var(--text);font-family:var(--fb);min-height:100vh;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;}
+body::before{content:'';position:fixed;inset:0;
+  background-image:linear-gradient(rgba(0,229,255,.025) 1px,transparent 1px),
+  linear-gradient(90deg,rgba(0,229,255,.025) 1px,transparent 1px);
+  background-size:56px 56px;pointer-events:none;z-index:0;}
 .blob{position:fixed;border-radius:50%;filter:blur(130px);pointer-events:none;z-index:0;}
 .b1{width:600px;height:600px;background:#00e5ff;opacity:.07;top:-200px;left:-200px;animation:bd 16s ease-in-out infinite alternate;}
 .b2{width:500px;height:500px;background:#ff3cac;opacity:.07;bottom:-150px;right:-150px;animation:bd 20s ease-in-out infinite alternate-reverse;}
 .b3{width:350px;height:350px;background:#a78bfa;opacity:.05;top:40%;left:40%;animation:bd 12s ease-in-out infinite alternate;}
 @keyframes bd{from{transform:translate(0,0) scale(1);}to{transform:translate(40px,30px) scale(1.1);}}
-
-/* CARD */
-.card{
-  position:relative;z-index:1;
-  background:var(--card);border:1px solid var(--border);
-  border-radius:24px;padding:44px 40px;
-  width:100%;max-width:400px;
-  text-align:center;
-  animation:fadeUp .5s ease forwards;
-}
+.card{position:relative;z-index:1;background:var(--card);border:1px solid var(--border);
+  border-radius:24px;padding:44px 40px;width:100%;max-width:400px;text-align:center;
+  animation:fadeUp .5s ease forwards;margin:20px;}
 @keyframes fadeUp{from{opacity:0;transform:translateY(20px);}to{opacity:1;transform:translateY(0);}}
-
-/* BACK LINK */
-.back{
-  position:absolute;top:16px;left:18px;
-  color:var(--muted);font-size:.8rem;text-decoration:none;
-  display:flex;align-items:center;gap:5px;
-  transition:color .2s;
-}
+.back{position:absolute;top:16px;left:18px;color:var(--muted);font-size:.8rem;
+  text-decoration:none;display:flex;align-items:center;gap:5px;transition:color .2s;}
 .back:hover{color:var(--text);}
-
-/* LOGO */
-.logo{
-  font-family:var(--fh);font-size:2rem;font-weight:800;letter-spacing:-1px;
+.logo{font-family:var(--fh);font-size:2rem;font-weight:800;letter-spacing:-1px;
   background:linear-gradient(120deg,#00e5ff,#a78bfa 50%,#ff3cac);
-  -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;
-  margin-bottom:6px;
-}
+  -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:6px;}
 .tagline{font-size:.8rem;color:var(--muted);margin-bottom:0;}
-
-/* ICON */
-.icon-wrap{
-  width:68px;height:68px;border-radius:50%;
-  background:linear-gradient(135deg,#00e5ff12,#a78bfa12);
-  border:1px solid var(--border);
-  display:flex;align-items:center;justify-content:center;
-  font-size:1.8rem;margin:22px auto 26px;
-}
-
-/* HEADING */
+.icon-wrap{width:68px;height:68px;border-radius:50%;background:linear-gradient(135deg,#00e5ff12,#a78bfa12);
+  border:1px solid var(--border);display:flex;align-items:center;justify-content:center;
+  font-size:1.8rem;margin:22px auto 26px;}
 .heading{font-family:var(--fh);font-size:1.25rem;font-weight:700;color:var(--text);margin-bottom:8px;}
 .desc{font-size:.82rem;color:var(--muted2);line-height:1.7;margin-bottom:30px;}
-
-/* GOOGLE BTN */
-.google-btn{
-  width:100%;display:flex;align-items:center;justify-content:center;gap:12px;
-  background:#ffffff;border:none;border-radius:100px;
-  padding:14px 22px;
+.google-btn{width:100%;display:flex;align-items:center;justify-content:center;gap:12px;
+  background:#ffffff;border:none;border-radius:100px;padding:14px 22px;
   font-family:var(--fb);font-size:.92rem;font-weight:500;color:#1a1a2e;
-  cursor:pointer;transition:opacity .2s, transform .15s;
-  margin-bottom:20px;
-}
+  cursor:pointer;transition:opacity .2s,transform .15s;margin-bottom:20px;}
 .google-btn:hover{opacity:.9;transform:translateY(-1px);}
 .google-btn:active{transform:scale(.98);}
+.google-btn:disabled{opacity:.6;cursor:not-allowed;transform:none;}
 .google-btn svg{width:20px;height:20px;flex-shrink:0;}
-
-/* DIVIDER DOTS */
 .dots{display:flex;justify-content:center;align-items:center;gap:8px;margin-bottom:20px;}
 .dots span{font-size:.75rem;color:var(--muted);}
 .dot-line{flex:1;height:1px;background:var(--border);max-width:60px;}
-
-/* FEATURES */
-.features{
-  display:flex;justify-content:center;gap:18px;
-  margin-bottom:24px;flex-wrap:wrap;
-}
-.feat{
-  display:flex;align-items:center;gap:6px;
-  font-size:.73rem;color:var(--muted2);
-}
+.features{display:flex;justify-content:center;gap:18px;margin-bottom:24px;flex-wrap:wrap;}
+.feat{display:flex;align-items:center;gap:6px;font-size:.73rem;color:var(--muted2);}
 .feat-dot{width:6px;height:6px;border-radius:50%;background:var(--a4);}
-
-/* PRIVACY */
 .privacy{font-size:.72rem;color:var(--muted);line-height:1.7;}
 .privacy a{color:var(--a5);text-decoration:none;}
 .privacy a:hover{color:var(--a1);}
-
-/* MSG */
-.msg{
-  font-size:.8rem;margin-top:16px;min-height:20px;
-  padding:8px 14px;border-radius:100px;
-  display:none;
-}
+.msg{font-size:.8rem;margin-top:16px;padding:8px 14px;border-radius:100px;display:none;}
 .msg.success{display:block;background:#43e97b15;color:#43e97b;border:1px solid #43e97b30;}
 .msg.error{display:block;background:#ff3cac15;color:#ff3cac;border:1px solid #ff3cac30;}
-
-/* LOADER */
-.loader{display:none;width:18px;height:18px;border:2px solid #1a1a2e40;border-top-color:#1a1a2e;border-radius:50%;animation:spin .6s linear infinite;}
+.spinner{display:none;width:18px;height:18px;border:2px solid #1a1a2e40;
+  border-top-color:#1a1a2e;border-radius:50%;animation:spin .6s linear infinite;}
 @keyframes spin{to{transform:rotate(360deg);}}
+.profile{display:none;text-align:center;}
+.profile-img{width:72px;height:72px;border-radius:50%;border:3px solid var(--a1);margin:0 auto 12px;display:block;}
+.profile-name{font-family:var(--fh);font-size:1.1rem;font-weight:700;color:var(--text);margin-bottom:4px;}
+.profile-email{font-size:.78rem;color:var(--muted2);margin-bottom:20px;}
+.btn-home{width:100%;padding:12px;background:linear-gradient(135deg,#00e5ff,#a78bfa);
+  border:none;border-radius:100px;color:#07080f;font-family:var(--fh);
+  font-size:.9rem;font-weight:700;cursor:pointer;margin-bottom:10px;transition:opacity .2s;}
+.btn-home:hover{opacity:.85;}
+.btn-logout{width:100%;padding:10px;background:transparent;border:1px solid var(--border);
+  color:var(--muted2);font-family:var(--fb);font-size:.82rem;border-radius:100px;
+  cursor:pointer;transition:all .2s;}
+.btn-logout:hover{border-color:var(--a2);color:var(--a2);}
+@media(max-width:480px){.card{padding:32px 20px;margin:16px;}.features{gap:12px;}}
 </style>
 </head>
 <body>
-
 <div class="blob b1"></div>
 <div class="blob b2"></div>
 <div class="blob b3"></div>
 
 <div class="card">
   <a class="back" href="index.html">← Back to Toolzy</a>
-
   <div class="logo">Toolzy</div>
   <div class="tagline">Your free daily tools hub</div>
+  <div class="icon-wrap" id="loginIcon">🔐</div>
 
-  <div class="icon-wrap">🔐</div>
-
-  <div class="heading">Welcome!</div>
-  <div class="desc">Sign in to save your favorite tools,<br/>game scores &amp; preferences — all free.</div>
-
-  <!-- GOOGLE BUTTON -->
-  <button class="google-btn" id="googleBtn" onclick="handleGoogle()">
-    <svg viewBox="0 0 48 48">
-      <path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9 3.2l6.7-6.7C35.7 2.3 30.2 0 24 0 14.7 0 6.7 5.4 2.7 13.3l7.8 6C12.4 13 17.8 9.5 24 9.5z"/>
-      <path fill="#4285F4" d="M46.6 24.5c0-1.6-.1-3.1-.4-4.5H24v8.5h12.7c-.6 3-2.3 5.5-4.8 7.2l7.5 5.8c4.4-4.1 7.2-10.1 7.2-17z"/>
-      <path fill="#FBBC05" d="M10.5 28.7A14.5 14.5 0 0 1 9.5 24c0-1.6.3-3.2.8-4.7l-7.8-6A23.9 23.9 0 0 0 0 24c0 3.9.9 7.5 2.7 10.7l7.8-6z"/>
-      <path fill="#34A853" d="M24 48c6.2 0 11.4-2 15.2-5.5l-7.5-5.8c-2 1.4-4.6 2.2-7.7 2.2-6.2 0-11.5-4.2-13.4-9.9l-7.8 6C6.7 42.6 14.7 48 24 48z"/>
-    </svg>
-    <span id="btnText">Continue with Google</span>
-    <div class="loader" id="loader"></div>
-  </button>
-
-  <!-- FEATURES -->
-  <div class="dots">
-    <div class="dot-line"></div>
-    <span>What you get</span>
-    <div class="dot-line"></div>
+  <div id="loginView">
+    <div class="heading">Welcome!</div>
+    <div class="desc">Sign in to save your favorite tools,<br/>scores &amp; preferences — all free.</div>
+    <button class="google-btn" id="googleBtn" onclick="signInWithGoogle()">
+      <svg viewBox="0 0 48 48">
+        <path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9 3.2l6.7-6.7C35.7 2.3 30.2 0 24 0 14.7 0 6.7 5.4 2.7 13.3l7.8 6C12.4 13 17.8 9.5 24 9.5z"/>
+        <path fill="#4285F4" d="M46.6 24.5c0-1.6-.1-3.1-.4-4.5H24v8.5h12.7c-.6 3-2.3 5.5-4.8 7.2l7.5 5.8c4.4-4.1 7.2-10.1 7.2-17z"/>
+        <path fill="#FBBC05" d="M10.5 28.7A14.5 14.5 0 0 1 9.5 24c0-1.6.3-3.2.8-4.7l-7.8-6A23.9 23.9 0 0 0 0 24c0 3.9.9 7.5 2.7 10.7l7.8-6z"/>
+        <path fill="#34A853" d="M24 48c6.2 0 11.4-2 15.2-5.5l-7.5-5.8c-2 1.4-4.6 2.2-7.7 2.2-6.2 0-11.5-4.2-13.4-9.9l-7.8 6C6.7 42.6 14.7 48 24 48z"/>
+      </svg>
+      <span id="btnText">Continue with Google</span>
+      <div class="spinner" id="spinner"></div>
+    </button>
+    <div class="dots">
+      <div class="dot-line"></div><span>What you get</span><div class="dot-line"></div>
+    </div>
+    <div class="features">
+      <div class="feat"><div class="feat-dot"></div><span>Save favorites</span></div>
+      <div class="feat"><div class="feat-dot"></div><span>Game scores</span></div>
+      <div class="feat"><div class="feat-dot"></div><span>Tool history</span></div>
+      <div class="feat"><div class="feat-dot"></div><span>100% Free</span></div>
+    </div>
+    <div class="privacy">
+      By continuing, you agree to our
+      <a href="#">Terms of Service</a> &amp; <a href="#">Privacy Policy</a>
+    </div>
   </div>
 
-  <div class="features">
-    <div class="feat"><div class="feat-dot"></div><span>Save favorites</span></div>
-    <div class="feat"><div class="feat-dot"></div><span>Game scores</span></div>
-    <div class="feat"><div class="feat-dot"></div><span>Tool history</span></div>
-    <div class="feat"><div class="feat-dot"></div><span>100% Free</span></div>
-  </div>
-
-  <!-- PRIVACY -->
-  <div class="privacy">
-    By continuing, you agree to our
-    <a href="#">Terms of Service</a> &amp;
-    <a href="#">Privacy Policy</a>
+  <div class="profile" id="profileView">
+    <img class="profile-img" id="profileImg" src="" alt="Profile"/>
+    <div class="profile-name" id="profileName"></div>
+    <div class="profile-email" id="profileEmail"></div>
+    <button class="btn-home" onclick="window.location.href='index.html'">🚀 Go to Toolzy</button>
+    <button class="btn-logout" onclick="doSignOut()">Sign Out</button>
   </div>
 
   <div class="msg" id="msg"></div>
 </div>
 
 <script>
-  /* =============================================
-     FIREBASE SETUP — Replace with your config
-     after completing Firebase setup (Step 8)
-     ============================================= */
-  const FIREBASE_READY = false; // Change to true after Firebase setup
+firebase.initializeApp({
+  apiKey: "AIzaSyCHlV6q7fI9_vLmUpQwNofIPs5vXWncEZ8",
+  authDomain: "toolzy-36a4a.firebaseapp.com",
+  projectId: "toolzy-36a4a",
+  storageBucket: "toolzy-36a4a.firebasestorage.app",
+  messagingSenderId: "135493269350",
+  appId: "1:135493269350:web:811ac98edf35779931baa7"
+});
 
-  function handleGoogle() {
-    if (!FIREBASE_READY) {
-      showMsg('Firebase not connected yet. Complete setup first!', 'error');
-      return;
+var auth = firebase.auth();
+var provider = new firebase.auth.GoogleAuthProvider();
+
+auth.onAuthStateChanged(function(user) {
+  if (user) { showProfile(user); } else { showLogin(); }
+});
+
+function signInWithGoogle() {
+  var btn = document.getElementById('googleBtn');
+  var spinner = document.getElementById('spinner');
+  var btnText = document.getElementById('btnText');
+  btn.disabled = true;
+  spinner.style.display = 'block';
+  btnText.textContent = 'Signing in...';
+  auth.signInWithPopup(provider).then(function(result) {
+    showMsg('Welcome ' + result.user.displayName + '!', 'success');
+    setTimeout(function(){ window.location.href = 'index.html'; }, 1500);
+  }).catch(function(err) {
+    btn.disabled = false;
+    spinner.style.display = 'none';
+    btnText.textContent = 'Continue with Google';
+    if (err.code === 'auth/popup-closed-by-user') {
+      showMsg('Popup closed. Please try again.', 'error');
+    } else if (err.code === 'auth/popup-blocked') {
+      showMsg('Popup blocked! Allow popups for this site.', 'error');
+    } else {
+      showMsg(err.message, 'error');
     }
-    // --- FIREBASE CODE GOES HERE ---
-    // import { signInWithPopup, GoogleAuthProvider } from "firebase/auth";
-    // const provider = new GoogleAuthProvider();
-    // signInWithPopup(auth, provider).then(result => {
-    //   window.location.href = 'index.html';
-    // });
-  }
+  });
+}
 
-  function showMsg(text, type) {
-    const msg = document.getElementById('msg');
-    msg.textContent = text;
-    msg.className = 'msg ' + type;
-  }
+function doSignOut() {
+  auth.signOut().then(function() { showMsg('Signed out successfully.', 'success'); });
+}
 
-  /* Auto-redirect if already logged in (activate after Firebase setup) */
-  // onAuthStateChanged(auth, user => {
-  //   if (user) window.location.href = 'index.html';
-  // });
+function showProfile(user) {
+  document.getElementById('loginView').style.display = 'none';
+  document.getElementById('profileView').style.display = 'block';
+  document.getElementById('loginIcon').style.display = 'none';
+  document.getElementById('profileImg').src = user.photoURL || '';
+  document.getElementById('profileName').textContent = user.displayName || 'User';
+  document.getElementById('profileEmail').textContent = user.email || '';
+}
+
+function showLogin() {
+  document.getElementById('loginView').style.display = 'block';
+  document.getElementById('profileView').style.display = 'none';
+  document.getElementById('loginIcon').style.display = 'flex';
+  document.getElementById('googleBtn').disabled = false;
+  document.getElementById('spinner').style.display = 'none';
+  document.getElementById('btnText').textContent = 'Continue with Google';
+}
+
+function showMsg(text, type) {
+  var el = document.getElementById('msg');
+  el.textContent = text;
+  el.className = 'msg ' + type;
+  setTimeout(function(){ el.className = 'msg'; }, 4000);
+}
 </script>
-
 </body>
 </html>
