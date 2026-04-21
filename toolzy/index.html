@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
 <title>Toolzy — Your Daily Tools Hub</title>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&family=Share+Tech+Mono&display=swap" rel="stylesheet"/>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
 <style>
 :root{
   --bg:#07080f;--card:#111422;--card-h:#161929;
@@ -45,6 +47,37 @@ nav{position:sticky;top:0;z-index:200;display:flex;align-items:center;justify-co
 .btn-signup{background:linear-gradient(135deg,#00e5ff,#a78bfa);border:none;color:#07080f;
   font-family:var(--fb);font-size:.82rem;font-weight:700;padding:8px 18px;border-radius:100px;cursor:pointer;transition:opacity .2s;}
 .btn-signup:hover{opacity:.85;}
+/* ── User Avatar ── */
+.user-avatar{
+  width:36px;height:36px;border-radius:50%;border:2px solid var(--a1);
+  background:linear-gradient(135deg,#00e5ff,#a78bfa);
+  color:#07080f;font-family:var(--fh);font-weight:800;font-size:.95rem;
+  cursor:pointer;display:flex;align-items:center;justify-content:center;
+  transition:box-shadow .2s,transform .15s;
+  line-height:1;
+}
+.user-avatar:hover{box-shadow:0 0 0 3px #00e5ff30;transform:scale(1.07);}
+.user-menu{
+  position:absolute;top:calc(100% + 10px);right:0;
+  background:var(--card);border:1px solid var(--border);border-radius:14px;
+  min-width:200px;padding:8px;
+  box-shadow:0 16px 48px #00000080;
+  display:none;z-index:300;
+  animation:fadeUp .2s ease;
+}
+.user-menu.open{display:block;}
+.user-menu-email{
+  font-size:.75rem;color:var(--muted2);padding:8px 10px 10px;
+  word-break:break-all;line-height:1.4;
+}
+.user-menu-divider{height:1px;background:var(--border);margin:0 0 6px;}
+.user-menu-item{
+  width:100%;background:transparent;border:none;
+  color:var(--text);font-family:var(--fb);font-size:.82rem;
+  padding:9px 10px;border-radius:8px;cursor:pointer;
+  text-align:left;transition:background .15s;display:block;
+}
+.user-menu-item:hover{background:#ff3cac12;color:#ff3cac;}
 .hero{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;padding:80px 40px 50px;text-align:center;}
 .badge{display:inline-flex;align-items:center;gap:8px;background:#ffffff06;border:1px solid var(--border);
   color:var(--muted2);font-size:.75rem;letter-spacing:.08em;text-transform:uppercase;
@@ -211,8 +244,18 @@ footer{position:relative;z-index:1;border-top:1px solid var(--border);padding:32
       <li><a href="#">About</a></li>
       <li><a href="tools/misc/sticky-notes.html" class="nav-notes">📝 Sticky Notes</a></li>
     </ul>
-    <button class="btn-login" onclick="window.location.href='login.html'">Log In</button>
-    <button class="btn-signup" onclick="window.location.href='login.html'">Sign Up Free</button>
+    <!-- Auth: shown when logged OUT -->
+    <button class="btn-login" id="btnLogin" onclick="window.location.href='login.html'" style="display:none">Log In</button>
+    <button class="btn-signup" id="btnSignup" onclick="window.location.href='login.html'" style="display:none">Sign Up Free</button>
+    <!-- Auth: shown when logged IN -->
+    <div class="user-avatar-wrap" id="userAvatarWrap" style="display:none;position:relative;">
+      <button class="user-avatar" id="userAvatar" onclick="toggleUserMenu()"></button>
+      <div class="user-menu" id="userMenu">
+        <div class="user-menu-email" id="userMenuEmail"></div>
+        <div class="user-menu-divider"></div>
+        <button class="user-menu-item" onclick="signOut()">🚪 Sign Out</button>
+      </div>
+    </div>
   </div>
 </nav>
 
@@ -337,6 +380,58 @@ footer{position:relative;z-index:1;border-top:1px solid var(--border);padding:32
 </footer>
 
 <script>
+/* ── Firebase Auth ─────────────────────────────────────────────────── */
+const firebaseConfig = {
+  apiKey:            "AIzaSyCHlV6q7fI9_vLmUpQwNofIPs5vXWncEZ8",
+  authDomain:        "toolzy-36a4a.firebaseapp.com",
+  projectId:         "toolzy-36a4a",
+  storageBucket:     "toolzy-36a4a.firebasestorage.app",
+  messagingSenderId: "135493269350",
+  appId:             "1:135493269350:web:811ac98edf35779931baa7",
+  measurementId:     "G-QW1163BJY1"
+};
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+
+auth.onAuthStateChanged(user => {
+  if(!user){
+    window.location.href = 'login.html';
+    return;
+  }
+  /* Save to localStorage for quick reads */
+  localStorage.setItem('toolzy_user', JSON.stringify({
+    name: user.displayName, email: user.email, photo: user.photoURL
+  }));
+
+  /* Show avatar, hide login/signup buttons */
+  document.getElementById('btnLogin').style.display  = 'none';
+  document.getElementById('btnSignup').style.display = 'none';
+  const wrap    = document.getElementById('userAvatarWrap');
+  const avatar  = document.getElementById('userAvatar');
+  const emailEl = document.getElementById('userMenuEmail');
+  wrap.style.display    = 'flex';
+  wrap.style.alignItems = 'center';
+  const initial = (user.displayName || user.email || '?')[0].toUpperCase();
+  avatar.textContent  = initial;
+  emailEl.textContent = user.email || '';
+});
+
+function toggleUserMenu(){
+  document.getElementById('userMenu').classList.toggle('open');
+}
+function signOut(){
+  auth.signOut().then(() => {
+    localStorage.removeItem('toolzy_user');
+    window.location.href = 'login.html';
+  });
+}
+document.addEventListener('click', e => {
+  const wrap = document.getElementById('userAvatarWrap');
+  if(wrap && !wrap.contains(e.target))
+    document.getElementById('userMenu').classList.remove('open');
+});
+/* ─────────────────────────────────────────────────────────────────── */
+
 document.querySelectorAll('.hs-val').forEach(el=>{
   const v = localStorage.getItem(el.dataset.key);
   if(v) el.textContent = v;
