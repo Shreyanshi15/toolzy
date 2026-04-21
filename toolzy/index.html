@@ -170,65 +170,12 @@ footer{position:relative;z-index:1;border-top:1px solid var(--border);padding:32
   background:linear-gradient(120deg,#00e5ff,#a78bfa);
   -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;}
 .foot-txt{font-size:.8rem;color:var(--muted);}
-/* ── Weather Widget ── */
-.weather-box{
-  display:flex;align-items:center;gap:0;
-  background:var(--card);border:1px solid var(--border);
-  border-radius:20px;overflow:hidden;
-  margin-top:4px;margin-bottom:28px;
-  width:100%;max-width:500px;
-  position:relative;
-  transition:border-color .25s,box-shadow .25s;
-}
-.weather-box:hover{border-color:#00e5ff30;box-shadow:0 8px 32px #00e5ff08;}
-.weather-box::before{
-  content:'';position:absolute;inset:0;
-  background:linear-gradient(90deg,#00e5ff06 0%,#a78bfa06 50%,transparent 100%);
-  pointer-events:none;
-}
-.wx-left{
-  padding:14px 20px;display:flex;align-items:center;gap:14px;flex:1;
-}
-.wx-icon-wrap{
-  width:46px;height:46px;border-radius:14px;
-  background:linear-gradient(135deg,#00e5ff15,#a78bfa15);
-  border:1px solid #00e5ff20;
-  display:flex;align-items:center;justify-content:center;
-  font-size:1.5rem;flex-shrink:0;
-}
-.wx-info{display:flex;flex-direction:column;gap:2px;}
-.wx-temp{font-family:var(--fh);font-size:1.4rem;font-weight:800;letter-spacing:-1px;
-  background:linear-gradient(120deg,#00e5ff,#a78bfa);
-  -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;
-  line-height:1;}
-.wx-cond{font-size:.75rem;color:var(--muted2);margin-top:1px;}
-.wx-loc{font-size:.7rem;color:var(--muted);display:flex;align-items:center;gap:3px;}
-.wx-divider{width:1px;height:46px;background:var(--border);flex-shrink:0;}
-.wx-right{
-  padding:14px 18px;display:flex;gap:20px;align-items:center;
-}
-.wx-stat{display:flex;flex-direction:column;align-items:center;gap:2px;}
-.wx-stat-val{font-family:'Share Tech Mono',monospace;font-size:.82rem;color:var(--text);font-weight:600;}
-.wx-stat-lbl{font-size:.62rem;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;}
-.wx-link{
-  padding:12px 16px;display:flex;align-items:center;justify-content:center;
-  background:#ffffff04;border-left:1px solid var(--border);
-  text-decoration:none;color:var(--muted);font-size:.8rem;
-  transition:color .2s,background .2s;white-space:nowrap;
-  flex-shrink:0;
-}
-.wx-link:hover{color:var(--a1);background:#00e5ff08;}
-.wx-skeleton{opacity:.4;animation:wsk 1.4s ease-in-out infinite;}
-@keyframes wsk{0%,100%{opacity:.4;}50%{opacity:.7;}}
-.wx-err{padding:14px 20px;font-size:.78rem;color:var(--muted2);display:flex;align-items:center;gap:8px;}
 @media(max-width:640px){
   nav{padding:0 16px;}.nav-links{display:none;}
   .hero{padding:60px 20px 36px;}
   .filter-bar{padding:0 16px 28px;}
   main{padding:0 16px 60px;}
   footer{padding:24px 20px;}
-  .wx-right{gap:12px;padding:14px 12px;}
-  .wx-link span{display:none;}
 }
 </style>
 </head>
@@ -270,11 +217,6 @@ footer{position:relative;z-index:1;border-top:1px solid var(--border);padding:32
   <div class="search-wrap">
     <span class="si">🔍</span>
     <input type="text" id="searchInput" placeholder="Search tools… PDF, BMI, Binary, Weather…" oninput="doSearch(this.value)"/>
-  </div>
-
-  <!-- Live Weather Widget -->
-  <div class="weather-box" id="weatherBox">
-    <div class="wx-err wx-skeleton">⛅ Fetching your local weather…</div>
   </div>
 
 </section>
@@ -496,80 +438,6 @@ function filterConv(group, btn){
   document.querySelectorAll('.conv-group').forEach(g=>g.classList.remove('active'));
   document.getElementById('cg-'+group).classList.add('active');
 }
-
-// ── Weather Widget ──────────────────────────────────────────────────
-const WX_ICONS = {
-  0:'☀️',1:'🌤️',2:'⛅',3:'☁️',
-  45:'🌫️',48:'🌫️',
-  51:'🌦️',53:'🌦️',55:'🌧️',
-  61:'🌧️',63:'🌧️',65:'🌧️',
-  71:'🌨️',73:'🌨️',75:'❄️',
-  80:'🌦️',81:'🌧️',82:'⛈️',
-  85:'🌨️',86:'❄️',
-  95:'⛈️',96:'⛈️',99:'⛈️'
-};
-const WX_DESC = {
-  0:'Clear sky',1:'Mainly clear',2:'Partly cloudy',3:'Overcast',
-  45:'Foggy',48:'Icy fog',
-  51:'Light drizzle',53:'Drizzle',55:'Heavy drizzle',
-  61:'Light rain',63:'Rain',65:'Heavy rain',
-  71:'Light snow',73:'Snow',75:'Heavy snow',
-  80:'Rain showers',81:'Heavy showers',82:'Violent showers',
-  85:'Snow showers',86:'Heavy snow showers',
-  95:'Thunderstorm',96:'Thunderstorm + hail',99:'Heavy thunderstorm'
-};
-
-async function loadWeather(){
-  const box = document.getElementById('weatherBox');
-  try {
-    // 1. Get location from IP
-    const geo = await fetch('https://ipapi.co/json/').then(r=>r.json());
-    const {latitude:lat, longitude:lon, city, country_code:cc} = geo;
-    if(!lat) throw new Error('geo failed');
-
-    // 2. Get weather from Open-Meteo (free, no key)
-    const wx = await fetch(
-      `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}` +
-      `&current=temperature_2m,relative_humidity_2m,wind_speed_10m,weather_code` +
-      `&wind_speed_unit=kmh&timezone=auto`
-    ).then(r=>r.json());
-
-    const cur  = wx.current;
-    const code = cur.weather_code;
-    const temp = Math.round(cur.temperature_2m);
-    const hum  = cur.relative_humidity_2m;
-    const wind = Math.round(cur.wind_speed_10m);
-    const icon = WX_ICONS[code] ?? '🌡️';
-    const desc = WX_DESC[code]  ?? 'Unknown';
-
-    box.innerHTML = `
-      <div class="wx-left">
-        <div class="wx-icon-wrap">${icon}</div>
-        <div class="wx-info">
-          <div class="wx-temp">${temp}°C</div>
-          <div class="wx-cond">${desc}</div>
-          <div class="wx-loc">📍 ${city}, ${cc}</div>
-        </div>
-      </div>
-      <div class="wx-divider"></div>
-      <div class="wx-right">
-        <div class="wx-stat">
-          <span class="wx-stat-val">${hum}%</span>
-          <span class="wx-stat-lbl">Humidity</span>
-        </div>
-        <div class="wx-stat">
-          <span class="wx-stat-val">${wind}</span>
-          <span class="wx-stat-lbl">km/h Wind</span>
-        </div>
-      </div>
-      <a class="wx-link" href="tools/weather/index.html">
-        Full forecast <span>→</span>
-      </a>`;
-  } catch(e) {
-  }
-}
-loadWeather();
-// ────────────────────────────────────────────────────────────────────
 
 function doSearch(q){
   q = q.toLowerCase().trim();
