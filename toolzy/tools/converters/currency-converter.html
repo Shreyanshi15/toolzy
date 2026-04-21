@@ -1,1 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Currency Converter — Toolzy</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+<style>
+:root{--bg:#07080f;--card:#111422;--border:#1c1f35;--a1:#00e5ff;--a5:#a78bfa;--a2:#ff3cac;--a4:#43e97b;--text:#dde2ff;--muted:#4a5070;--muted2:#6a7090;--fh:'Syne',sans-serif;--fb:'DM Sans',sans-serif;}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);color:var(--text);font-family:var(--fb);min-height:100vh;overflow-x:hidden;}
+body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(0,229,255,.025) 1px,transparent 1px),linear-gradient(90deg,rgba(0,229,255,.025) 1px,transparent 1px);background-size:56px 56px;pointer-events:none;z-index:0;}
+.blob{position:fixed;border-radius:50%;filter:blur(130px);pointer-events:none;z-index:0;}
+.b1{width:500px;height:500px;background:#00e5ff;opacity:.06;top:-150px;left:-150px;animation:bd 14s ease-in-out infinite alternate;}
+.b2{width:400px;height:400px;background:#a78bfa;opacity:.06;bottom:-100px;right:-100px;animation:bd 18s ease-in-out infinite alternate-reverse;}
+@keyframes bd{from{transform:translate(0,0) scale(1);}to{transform:translate(40px,30px) scale(1.1);}}
+nav{position:sticky;top:0;z-index:100;display:flex;align-items:center;justify-content:space-between;padding:0 32px;height:62px;background:rgba(7,8,15,.9);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);}
+.nav-logo{font-family:var(--fh);font-size:1.3rem;font-weight:800;letter-spacing:-1px;background:linear-gradient(120deg,#00e5ff,#a78bfa);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;text-decoration:none;}
+.btn-back{background:transparent;border:1px solid var(--border);color:var(--muted2);font-family:var(--fb);font-size:.82rem;padding:8px 18px;border-radius:100px;cursor:pointer;text-decoration:none;transition:all .2s;display:inline-flex;align-items:center;gap:6px;}
+.btn-back:hover{border-color:var(--a1);color:var(--a1);}
+main{position:relative;z-index:1;max-width:680px;margin:0 auto;padding:48px 24px 100px;}
+.tool-header{text-align:center;margin-bottom:40px;}
+.tool-icon{width:72px;height:72px;border-radius:20px;background:linear-gradient(135deg,#00e5ff15,#a78bfa15);border:1px solid #00e5ff30;display:flex;align-items:center;justify-content:center;font-size:2rem;margin:0 auto 16px;animation:iconpulse 3s ease-in-out infinite;}
+@keyframes iconpulse{0%,100%{box-shadow:0 0 0 0 #00e5ff20;}50%{box-shadow:0 0 0 16px #00e5ff00;}}
+.tool-title{font-family:var(--fh);font-size:2rem;font-weight:800;letter-spacing:-1px;background:linear-gradient(135deg,#00e5ff,#a78bfa);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;}
+.tool-sub{color:var(--muted2);font-size:.9rem;margin-top:6px;}
+.card{background:var(--card);border:1px solid var(--border);border-radius:20px;padding:28px;}
+.row{display:flex;gap:12px;align-items:flex-end;margin-bottom:20px;}
+.field{flex:1;display:flex;flex-direction:column;gap:8px;}
+.field label{font-size:.75rem;color:var(--muted2);text-transform:uppercase;letter-spacing:.06em;}
+.field input,.field select{background:#ffffff06;border:1px solid var(--border);border-radius:12px;padding:14px 16px;color:var(--text);font-family:var(--fb);font-size:1rem;outline:none;transition:border-color .2s;width:100%;}
+.field input:focus,.field select:focus{border-color:#00e5ff40;}
+.field select{cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236a7090' fill='none' stroke-width='2'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center;}
+.field select option{background:#111422;}
+.swap-btn{width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,#00e5ff20,#a78bfa20);border:1px solid #00e5ff30;color:var(--a1);font-size:1.1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;flex-shrink:0;margin-bottom:2px;}
+.swap-btn:hover{background:linear-gradient(135deg,#00e5ff35,#a78bfa35);transform:rotate(180deg);}
+.result-box{background:linear-gradient(135deg,#00e5ff08,#a78bfa08);border:1px solid #00e5ff20;border-radius:16px;padding:24px;text-align:center;margin-bottom:20px;}
+.result-main{font-family:var(--fh);font-size:2.2rem;font-weight:800;background:linear-gradient(135deg,#00e5ff,#a78bfa);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:4px;}
+.result-sub{color:var(--muted2);font-size:.82rem;}
+.rate-info{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;background:#ffffff04;border:1px solid var(--border);border-radius:10px;font-size:.78rem;color:var(--muted2);margin-bottom:20px;}
+.rate-info span{color:var(--text);}
+.popular-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:20px;}
+.pop-btn{background:#ffffff04;border:1px solid var(--border);border-radius:10px;padding:10px;text-align:center;cursor:pointer;transition:all .2s;font-size:.78rem;color:var(--muted2);}
+.pop-btn:hover{border-color:var(--a1);color:var(--a1);background:#00e5ff08;}
+.pop-btn .flag{font-size:1.1rem;display:block;margin-bottom:2px;}
+.convert-btn{width:100%;padding:14px;background:linear-gradient(135deg,#00e5ff,#a78bfa);border:none;border-radius:100px;color:#07080f;font-family:var(--fh);font-size:.9rem;font-weight:700;cursor:pointer;transition:opacity .2s;margin-bottom:8px;}
+.convert-btn:hover{opacity:.85;}
+.sec-label{font-size:.75rem;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:12px;margin-top:4px;}
+.loading{color:var(--muted2);font-size:.8rem;text-align:center;padding:8px;}
+.error-msg{color:#ff3cac;font-size:.8rem;text-align:center;padding:8px;background:#ff3cac10;border-radius:8px;border:1px solid #ff3cac20;}
+</style>
+</head>
+<body>
+<div class="blob b1"></div><div class="blob b2"></div>
+<nav>
+  <a href="../../index.html" class="btn-back">← Back to Toolzy</a>
+  <a href="../../index.html" class="nav-logo">Toolzy</a>
+</nav>
+<main>
+  <div class="tool-header">
+    <div class="tool-icon">💱</div>
+    <div class="tool-title">Currency Converter</div>
+    <div class="tool-sub">Real-time exchange rates for 150+ currencies</div>
+  </div>
+  <div class="card">
+    <div class="row">
+      <div class="field">
+        <label>Amount</label>
+        <input type="number" id="amount" value="1" min="0" step="any" oninput="convert()"/>
+      </div>
+      <div class="field">
+        <label>From</label>
+        <select id="fromCur" onchange="convert()"></select>
+      </div>
+      <button class="swap-btn" onclick="swapCurrencies()" title="Swap">⇄</button>
+      <div class="field">
+        <label>To</label>
+        <select id="toCur" onchange="convert()"></select>
+      </div>
+    </div>
+    <div class="result-box" id="resultBox">
+      <div class="result-main" id="resultMain">—</div>
+      <div class="result-sub" id="resultSub">Enter an amount to convert</div>
+    </div>
+    <div class="rate-info">
+      <span>Exchange Rate</span>
+      <span id="rateDisplay">—</span>
+    </div>
+    <div class="sec-label">Popular currencies</div>
+    <div class="popular-grid">
+      <div class="pop-btn" onclick="setQuick('USD','INR')"><span class="flag">🇺🇸→🇮🇳</span>USD → INR</div>
+      <div class="pop-btn" onclick="setQuick('EUR','USD')"><span class="flag">🇪🇺→🇺🇸</span>EUR → USD</div>
+      <div class="pop-btn" onclick="setQuick('GBP','INR')"><span class="flag">🇬🇧→🇮🇳</span>GBP → INR</div>
+      <div class="pop-btn" onclick="setQuick('USD','EUR')"><span class="flag">🇺🇸→🇪🇺</span>USD → EUR</div>
+      <div class="pop-btn" onclick="setQuick('JPY','USD')"><span class="flag">🇯🇵→🇺🇸</span>JPY → USD</div>
+      <div class="pop-btn" onclick="setQuick('AED','INR')"><span class="flag">🇦🇪→🇮🇳</span>AED → INR</div>
+    </div>
+    <div id="statusMsg" style="margin-top:12px;"></div>
+  </div>
+</main>
+<script>
+const CURRENCIES = {USD:'🇺🇸 USD - US Dollar',EUR:'🇪🇺 EUR - Euro',GBP:'🇬🇧 GBP - British Pound',INR:'🇮🇳 INR - Indian Rupee',JPY:'🇯🇵 JPY - Japanese Yen',AUD:'🇦🇺 AUD - Australian Dollar',CAD:'🇨🇦 CAD - Canadian Dollar',CHF:'🇨🇭 CHF - Swiss Franc',CNY:'🇨🇳 CNY - Chinese Yuan',AED:'🇦🇪 AED - UAE Dirham',SGD:'🇸🇬 SGD - Singapore Dollar',HKD:'🇭🇰 HKD - Hong Kong Dollar',NOK:'🇳🇴 NOK - Norwegian Krone',SEK:'🇸🇪 SEK - Swedish Krona',DKK:'🇩🇰 DKK - Danish Krone',MXN:'🇲🇽 MXN - Mexican Peso',BRL:'🇧🇷 BRL - Brazilian Real',ZAR:'🇿🇦 ZAR - South African Rand',RUB:'🇷🇺 RUB - Russian Ruble',TRY:'🇹🇷 TRY - Turkish Lira',KRW:'🇰🇷 KRW - South Korean Won',THB:'🇹🇭 THB - Thai Baht',IDR:'🇮🇩 IDR - Indonesian Rupiah',MYR:'🇲🇾 MYR - Malaysian Ringgit',PHP:'🇵🇭 PHP - Philippine Peso',PKR:'🇵🇰 PKR - Pakistani Rupee',BDT:'🇧🇩 BDT - Bangladeshi Taka',NPR:'🇳🇵 NPR - Nepalese Rupee',LKR:'🇱🇰 LKR - Sri Lankan Rupee',NZD:'🇳🇿 NZD - New Zealand Dollar',SAR:'🇸🇦 SAR - Saudi Riyal',QAR:'🇶🇦 QAR - Qatari Riyal',KWD:'🇰🇼 KWD - Kuwaiti Dinar',BHD:'🇧🇭 BHD - Bahraini Dinar',EGP:'🇪🇬 EGP - Egyptian Pound',NGN:'🇳🇬 NGN - Nigerian Naira',KES:'🇰🇪 KES - Kenyan Shilling',GHS:'🇬🇭 GHS - Ghanaian Cedi',MAD:'🇲🇦 MAD - Moroccan Dirham',TZS:'🇹🇿 TZS - Tanzanian Shilling'};
+let rates = {};
+let lastFetch = 0;
 
+const fromSel = document.getElementById('fromCur');
+const toSel = document.getElementById('toCur');
+
+Object.entries(CURRENCIES).forEach(([code, label])=>{
+  const o1 = new Option(label, code);
+  const o2 = new Option(label, code);
+  fromSel.add(o1);
+  toSel.add(o2);
+});
+fromSel.value = 'USD';
+toSel.value = 'INR';
+
+async function fetchRates(base) {
+  const now = Date.now();
+  if (rates[base] && now - lastFetch < 3600000) return rates[base];
+  try {
+    const res = await fetch(`https://api.exchangerate-api.com/v4/latest/${base}`);
+    const data = await res.json();
+    rates[base] = data.rates;
+    lastFetch = now;
+    return data.rates;
+  } catch(e) {
+    // fallback static rates vs USD
+    const fallback = {USD:1,EUR:0.92,GBP:0.79,INR:83.5,JPY:149.5,AUD:1.53,CAD:1.36,CHF:0.9,CNY:7.24,AED:3.67,SGD:1.34,HKD:7.82,MXN:17.2,BRL:5.1,ZAR:18.6,KRW:1330,THB:35.5,IDR:15800,MYR:4.7,PHP:56.5,PKR:278,BDT:110,NPR:133,LKR:324,NZD:1.63,SAR:3.75,QAR:3.64,KWD:0.307,BHD:0.376,EGP:30.9,NGN:1550,MAD:10.1};
+    rates[base] = {};
+    const baseRate = fallback[base] || 1;
+    Object.entries(fallback).forEach(([k,v])=> rates[base][k] = v/baseRate);
+    return rates[base];
+  }
+}
+
+async function convert() {
+  const amount = parseFloat(document.getElementById('amount').value);
+  const from = fromSel.value;
+  const to = toSel.value;
+  if (isNaN(amount) || amount < 0) return;
+  document.getElementById('resultMain').textContent = '...';
+  const r = await fetchRates(from);
+  const rate = r[to];
+  if (!rate) return;
+  const result = (amount * rate).toFixed(to === 'JPY' || to === 'KRW' || to === 'IDR' ? 0 : 2);
+  const formatted = new Intl.NumberFormat('en-IN').format(result);
+  document.getElementById('resultMain').textContent = `${to} ${formatted}`;
+  document.getElementById('resultSub').textContent = `${amount} ${from} = ${formatted} ${to}`;
+  document.getElementById('rateDisplay').textContent = `1 ${from} = ${rate.toFixed(4)} ${to}`;
+}
+
+function swapCurrencies(){
+  const tmp = fromSel.value;
+  fromSel.value = toSel.value;
+  toSel.value = tmp;
+  convert();
+}
+
+function setQuick(from, to){
+  fromSel.value = from;
+  toSel.value = to;
+  document.getElementById('amount').value = 1;
+  convert();
+}
+
+convert();
+</script>
+</body>
+</html>
