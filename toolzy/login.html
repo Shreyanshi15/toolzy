@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
 <title>Login — Toolzy</title>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet"/>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
 <style>
 :root{
   --bg:#07080f;--card:#111422;--border:#1c1f35;
@@ -176,35 +178,69 @@ body::before{
 </div>
 
 <script>
-  /* =============================================
-     FIREBASE SETUP — Replace with your config
-     after completing Firebase setup (Step 8)
-     ============================================= */
-  const FIREBASE_READY = false; // Change to true after Firebase setup
+  const firebaseConfig = {
+    apiKey:            "AIzaSyCHlV6q7fI9_vLmUpQwNofIPs5vXWncEZ8",
+    authDomain:        "toolzy-36a4a.firebaseapp.com",
+    projectId:         "toolzy-36a4a",
+    storageBucket:     "toolzy-36a4a.firebasestorage.app",
+    messagingSenderId: "135493269350",
+    appId:             "1:135493269350:web:811ac98edf35779931baa7",
+    measurementId:     "G-QW1163BJY1"
+  };
 
-  function handleGoogle() {
-    if (!FIREBASE_READY) {
-      showMsg('Firebase not connected yet. Complete setup first!', 'error');
-      return;
+  firebase.initializeApp(firebaseConfig);
+  const auth = firebase.auth();
+
+  /* If already logged in, skip to app */
+  auth.onAuthStateChanged(user => {
+    if(user){
+      localStorage.setItem('toolzy_user', JSON.stringify({
+        name:  user.displayName,
+        email: user.email,
+        photo: user.photoURL
+      }));
+      window.location.href = 'index.html';
     }
-    // --- FIREBASE CODE GOES HERE ---
-    // import { signInWithPopup, GoogleAuthProvider } from "firebase/auth";
-    // const provider = new GoogleAuthProvider();
-    // signInWithPopup(auth, provider).then(result => {
-    //   window.location.href = 'index.html';
-    // });
+  });
+
+  function handleGoogle(){
+    const btn    = document.getElementById('googleBtn');
+    const loader = document.getElementById('loader');
+    const text   = document.getElementById('btnText');
+
+    btn.disabled  = true;
+    loader.style.display = 'block';
+    text.textContent     = 'Signing in…';
+
+    const provider = new firebase.auth.GoogleAuthProvider();
+    auth.signInWithPopup(provider)
+      .then(result => {
+        const u = result.user;
+        localStorage.setItem('toolzy_user', JSON.stringify({
+          name:  u.displayName,
+          email: u.email,
+          photo: u.photoURL
+        }));
+        window.location.href = 'index.html';
+      })
+      .catch(err => {
+        btn.disabled  = false;
+        loader.style.display = 'none';
+        text.textContent     = 'Continue with Google';
+        showMsg(
+          err.code === 'auth/popup-closed-by-user'
+            ? 'Sign-in cancelled. Try again.'
+            : 'Sign-in failed: ' + err.message,
+          'error'
+        );
+      });
   }
 
-  function showMsg(text, type) {
+  function showMsg(text, type){
     const msg = document.getElementById('msg');
     msg.textContent = text;
     msg.className = 'msg ' + type;
   }
-
-  /* Auto-redirect if already logged in (activate after Firebase setup) */
-  // onAuthStateChanged(auth, user => {
-  //   if (user) window.location.href = 'index.html';
-  // });
 </script>
 
 </body>
