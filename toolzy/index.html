@@ -186,6 +186,7 @@ footer{position:relative;z-index:1;border-top:1px solid var(--border);padding:32
   <button class="fb" onclick="filterCat('calc',this)">🔢 Calculators</button>
   <button class="fb" onclick="filterCat('convert',this)">🔄 Converters</button>
   <button class="fb" onclick="filterCat('calendar',this)">📅 Calendar</button>
+  <button class="fb" onclick="filterCat('misc',this)">🛠️ Utilities</button>
 </div>
 
 <main>
@@ -221,15 +222,35 @@ footer{position:relative;z-index:1;border-top:1px solid var(--border);padding:32
     <a class="card cs" data-real="tools/calculators/scientific.html" data-name="Scientific Calculator" data-icon="🔬" style="--ca:#f5a62350;--glow:#f5a62310;--ib:#f5a62315;" data-cat="calc"><div class="live-pip"></div><div class="soon-pip">Soon</div><div class="card-icon">🔬</div><div class="card-name">Scientific Calc</div><div class="card-desc">Trig, log, factorial, exponents &amp; more</div><div class="card-badge" style="background:#f5a62320;color:#f5a623;">Calc</div></a>
     <a class="card cs" data-real="tools/calculators/bmi.html"        data-name="BMI Calculator"        data-icon="⚖️" style="--ca:#f5a62350;--glow:#f5a62310;--ib:#f5a62315;" data-cat="calc"><div class="live-pip"></div><div class="soon-pip">Soon</div><div class="card-icon">⚖️</div><div class="card-name">BMI Calculator</div><div class="card-desc">Calculate your Body Mass Index instantly</div><div class="card-badge" style="background:#f5a62320;color:#f5a623;">Calc</div></a>
     <a class="card cs" data-real="tools/calculators/age.html"        data-name="Age Calculator"        data-icon="🎂" style="--ca:#f5a62350;--glow:#f5a62310;--ib:#f5a62315;" data-cat="calc"><div class="live-pip"></div><div class="soon-pip">Soon</div><div class="card-icon">🎂</div><div class="card-name">Age Calculator</div><div class="card-desc">Find exact age in years, months and days</div><div class="card-badge" style="background:#f5a62320;color:#f5a623;">Calc</div></a>
-    <a class="card cs" data-real="tools/calculators/emi.html"        data-name="EMI Loan Calculator"   data-icon="🏦" style="--ca:#f5a62350;--glow:#f5a62310;--ib:#f5a62315;" data-cat="calc"><div class="live-pip"></div><div class="soon-pip">Soon</div><div class="card-icon">🏦</div><div class="card-name">EMI Calculator</div><div class="card-desc">Calculate loan EMI with interest breakdown</div><div class="card-badge" style="background:#f5a62320;color:#f5a623;">Calc</div></a>
   </div>
 </div>
 
-<!-- CONVERTERS — FIX 2: data-cat was "Converters" (capital C), fixed to "convert" -->
-<!-- FIX 3: removed extra stray </div> that was breaking HTML structure -->
+<!-- UTILITIES -->
+<div class="sec" data-cat="misc">
+  <div class="sec-head"><span class="sec-icon">🛠️</span><span class="sec-title">Utilities</span><div class="sec-line"></div><span class="sec-count">4 tools</span></div>
+  <div class="grid">
+    
+    <a class="card cs" data-real="tools/misc/password-generator.html" data-name="Password Generator" data-icon="🔑" style="--ca:#a78bfa50;--glow:#a78bfa10;--ib:#a78bfa15;" data-cat="misc"><div class="live-pip"></div><div class="soon-pip">Soon</div><div class="card-icon">🔑</div><div class="card-name">Password Generator</div><div class="card-desc">Generate strong, secure passwords instantly</div><div class="card-badge" style="background:#a78bfa20;color:#a78bfa;">Security</div></a>
+    <a class="card cs" data-real="tools/misc/timer-stopwatch.html"    data-name="Timer Stopwatch"    data-icon="⏱️" style="--ca:#00e5ff50;--glow:#00e5ff10;--ib:#00e5ff15;" data-cat="misc"><div class="live-pip"></div><div class="soon-pip">Soon</div><div class="card-icon">⏱️</div><div class="card-name">Timer &amp; Stopwatch</div><div class="card-desc">Countdown timer with laps &amp; presets</div><div class="card-badge" style="background:#00e5ff20;color:#00e5ff;">Timer</div></a>
+    <a class="card cs" data-real="tools/misc/sticky-notes.html"       data-name="Sticky Notes"       data-icon="📝" style="--ca:#f5a62350;--glow:#f5a62310;--ib:#f5a62315;" data-cat="misc"><div class="live-pip"></div><div class="soon-pip">Soon</div><div class="card-icon">📝</div><div class="card-name">Sticky Notes</div><div class="card-desc">Save colorful notes locally in your browser</div><div class="card-badge" style="background:#f5a62320;color:#f5a623;">Notes</div></a>
+  </div>
+</div>
+
+<!-- CALENDAR -->
+<div class="sec" data-cat="calendar">
+  <div class="sec-head"><span class="sec-icon">📅</span><span class="sec-title">Calendar</span><div class="sec-line"></div><span class="sec-count">3 tools</span></div>
+  <div class="grid">
+    <a class="card cs" data-real="tools/calendar/solar.html"   data-name="Solar Calendar"  data-icon="☀️" style="--ca:#f5a62350;--glow:#f5a62310;--ib:#f5a62315;" data-cat="calendar"><div class="live-pip"></div><div class="soon-pip">Soon</div><div class="card-icon">☀️</div><div class="card-name">Solar Calendar</div><div class="card-desc">Gregorian calendar with solar events &amp; holidays</div><div class="card-badge" style="background:#f5a62320;color:#f5a623;">Calendar</div></a>
+    <a class="card cs" data-real="tools/calendar/lunar.html"   data-name="Lunar Calendar"  data-icon="🌙" style="--ca:#a78bfa50;--glow:#a78bfa10;--ib:#a78bfa15;" data-cat="calendar"><div class="live-pip"></div><div class="soon-pip">Soon</div><div class="card-icon">🌙</div><div class="card-name">Lunar Calendar</div><div class="card-desc">Moon phases, lunar age &amp; upcoming events</div><div class="card-badge" style="background:#a78bfa20;color:#a78bfa;">Calendar</div></a>
+    <a class="card cs" data-real="tools/calendar/eclipse.html" data-name="Eclipse Calendar" data-icon="🌑" style="--ca:#ff3cac50;--glow:#ff3cac10;--ib:#ff3cac15;" data-cat="calendar"><div class="live-pip"></div><div class="soon-pip">Soon</div><div class="card-icon">🌑</div><div class="card-name">Eclipse Calendar</div><div class="card-desc">Upcoming solar &amp; lunar eclipses worldwide</div><div class="card-badge" style="background:#ff3cac20;color:#ff3cac;">Calendar</div></a>
+  </div>
+</div>
+
+<!-- CONVERTERS -->
 <div class="sec" data-cat="convert">
   <div class="sec-head"><span class="sec-icon">🔄</span><span class="sec-title">Converters</span><div class="sec-line"></div><span class="sec-count">5 tools</span></div>
   <div class="grid">
+    <a class="card cs" data-real="tools/converters/currency-converter.html" data-name="Currency Converter"  data-icon="💱" style="--ca:#43e97b50;--glow:#43e97b10;--ib:#43e97b15;" data-cat="misc"><div class="live-pip"></div><div class="soon-pip">Soon</div><div class="card-icon">💱</div><div class="card-name">Currency Converter</div><div class="card-desc">Real-time exchange rates for 150+ currencies</div><div class="card-badge" style="background:#43e97b20;color:#43e97b;">Currency</div></a>
     <a class="card cs" data-real="tools/converters/number-converter.html" data-name="Number Converter" data-icon="🔢" style="--ca:#a78bfa50;--glow:#a78bfa10;--ib:#a78bfa15;" data-cat="convert"><div class="live-pip"></div><div class="soon-pip">Soon</div><div class="card-icon">🔢</div><div class="card-name">Number Converter</div><div class="card-desc">Binary, Decimal, Hex, Octal, Roman &amp; Base 2–36</div><div class="card-badge" style="background:#a78bfa20;color:#a78bfa;">Number</div></a>
     <a class="card cs" data-real="tools/converters/unit-converter.html" data-name="Unit Converter" data-icon="📏" style="--ca:#a78bfa50;--glow:#a78bfa10;--ib:#a78bfa15;" data-cat="convert"><div class="live-pip"></div><div class="soon-pip">Soon</div><div class="card-icon">📏</div><div class="card-name">Unit Converter</div><div class="card-desc">Length, Weight, Temperature, Speed, Area, Volume &amp; more</div><div class="card-badge" style="background:#a78bfa20;color:#a78bfa;">Unit</div></a>
     <a class="card cs" data-real="tools/converters/data-converter.html" data-name="Data Converter" data-icon="💾" style="--ca:#a78bfa50;--glow:#a78bfa10;--ib:#a78bfa15;" data-cat="convert"><div class="live-pip"></div><div class="soon-pip">Soon</div><div class="card-icon">💾</div><div class="card-name">Data Converter</div><div class="card-desc">MB, GB, TB, KB, PB, Mbps, Gbps &amp; more</div><div class="card-badge" style="background:#a78bfa20;color:#a78bfa;">Data</div></a>
